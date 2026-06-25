@@ -876,6 +876,50 @@ async function initApp() {
     buildTimelineControls();
 }
 
+// Switch main tabs
+function switchView(viewName) {
+    const dashboard = document.getElementById("dashboard-view");
+    const course1 = document.getElementById("course1-view");
+    const course2 = document.getElementById("course2-view");
+    const course3 = document.getElementById("course3-view");
+    
+    // Hide all
+    dashboard.style.display = "none";
+    course1.style.display = "none";
+    course2.style.display = "none";
+    course3.style.display = "none";
+
+    // Deactivate all buttons
+    document.getElementById("tab-dashboard").classList.remove("active");
+    document.getElementById("tab-course1").classList.remove("active");
+    document.getElementById("tab-course2").classList.remove("active");
+    document.getElementById("tab-course3").classList.remove("active");
+
+    // Show selected and load course
+    if (viewName === "dashboard") {
+        dashboard.style.display = "block";
+        document.getElementById("tab-dashboard").classList.add("active");
+    } else if (viewName === "course1") {
+        course1.style.display = "block";
+        document.getElementById("tab-course1").classList.add("active");
+        loadCourse(0).then(() => {
+            selectCourseSlide(0, activeSlideIdxs[0]);
+        });
+    } else if (viewName === "course2") {
+        course2.style.display = "block";
+        document.getElementById("tab-course2").classList.add("active");
+        loadCourse(1).then(() => {
+            selectCourseSlide(1, activeSlideIdxs[1]);
+        });
+    } else if (viewName === "course3") {
+        course3.style.display = "block";
+        document.getElementById("tab-course3").classList.add("active");
+        loadCourse(2).then(() => {
+            selectCourseSlide(2, activeSlideIdxs[2]);
+        });
+    }
+}
+
 // Hardcoded fallback data in case portfolio_history.json isn't loaded
 const fallbackLedgerData = {
     "Fri, Jan 30": {
