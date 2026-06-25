@@ -936,6 +936,47 @@ const fallbackLedgerData = {
     }
 };
 
+// Date and Month Helpers
+function getMonthName(key) {
+    if (!key) return "January";
+    const parts = key.split(",");
+    if (parts.length < 2) return "January";
+    const subParts = parts[1].trim().split(" ");
+    if (subParts.length === 0) return "January";
+    const m = subParts[0].substring(0, 3);
+    const months = {
+        Jan: "January", Feb: "February", Mar: "March", Apr: "April",
+        May: "May", Jun: "June", Jul: "July", Aug: "August",
+        Sep: "September", Oct: "October", Nov: "November", Dec: "December"
+    };
+    return months[m] || "January";
+}
+
+function getMonthOrder(monthName) {
+    const orders = {
+        January: 1, February: 2, March: 3, April: 4, May: 5, June: 6,
+        July: 7, August: 8, September: 9, October: 10, November: 11, December: 12
+    };
+    return orders[monthName] || 0;
+}
+
+function getParsedDate(key, value) {
+    if (value && value.date) {
+        return new Date(value.date);
+    }
+    if (!key) return new Date();
+    const parts = key.split(",");
+    if (parts.length < 2) return new Date();
+    const subParts = parts[1].trim().split(" ");
+    const mStr = subParts[0];
+    const dayNum = parseInt(subParts[1]) || 1;
+    const months = {
+        Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+        Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
+    };
+    return new Date(2026, months[mStr] || 0, dayNum);
+}
+
 // Build months navigation and horizontal days selector
 function buildTimelineControls() {
     const keys = Object.keys(allHistory);
@@ -1000,17 +1041,26 @@ function renderDaysTimeline() {
     daysList.forEach(day => {
         const btn = document.createElement("button");
         btn.className = `timeline-btn ${activeDay === day.key ? 'active' : ''}`;
+        btn.dataset.key = day.key;
         btn.onclick = () => setTimelineDay(day.key);
         
         let weekday = "Day";
         let datePart = day.key;
         
-        const commaParts = day.value.date.split(",");
-        if (commaParts.length >= 2) {
-            weekday = commaParts[0].trim();
-            const spaceParts = commaParts[1].trim().split(" ");
-            if (spaceParts.length >= 2) {
-                datePart = `${spaceParts[0]} ${spaceParts[1]}`;
+        if (day.value && day.value.date) {
+            const commaParts = day.value.date.split(",");
+            if (commaParts.length >= 2) {
+                weekday = commaParts[0].trim();
+                const spaceParts = commaParts[1].trim().split(" ");
+                if (spaceParts.length >= 2) {
+                    datePart = `${spaceParts[0]} ${spaceParts[1]}`;
+                }
+            }
+        } else {
+            const parts = day.key.split(",");
+            if (parts.length >= 2) {
+                weekday = parts[0].trim();
+                datePart = parts[1].trim();
             }
         }
 
@@ -1404,7 +1454,7 @@ function setTimelineDay(dayKey) {
     activeDay = dayKey;
     
     document.querySelectorAll(".timeline-btn").forEach(btn => {
-        if (btn.querySelector(".date-label").innerText.includes(dayKey.split(" ").slice(1).join(" "))) {
+        if (btn.dataset.key === dayKey) {
             btn.classList.add("active");
         } else {
             btn.classList.remove("active");
