@@ -5,16 +5,16 @@ let allHistory = {}; // Load from portfolio_history.json
 let monthsList = [];
 let activeMonth = "";
 
-// Course Slide Database
-let activeModuleIdx = 0;
-let activeSlideIdx = 0;
+// Course Slide State
+let activeSlideIdxs = [0, 0, 0]; // Course 1, Course 2, Course 3 slide pointers
 
-const courseModules = [
+const courseModulesData = [
     {
         category: "Course 1: Risk & Psychology",
         title: "Trade Like a Grown-Up – Discipline, Defence, and Devilry",
         slides: [
             {
+                label: "1. Framing the Game",
                 subtitle: "I. Framing the Game – Trading Is Not Gambling",
                 content: `
                     <p>Trading is deceptively simple: buy low, sell high. Or short high, buy back lower. Easy to say, fatal to underestimate. The market is a game of probabilities wrapped in uncertainty, powered by emotion.</p>
@@ -49,6 +49,7 @@ const courseModules = [
                 `
             },
             {
+                label: "2. Money Management",
                 subtitle: "II. Money Management – Ammunition Control",
                 content: `
                     <h4>Position Sizing</h4>
@@ -62,21 +63,35 @@ const courseModules = [
                         <li>Don’t blow the powder all at once. Enter in measured clips. Let the market confirm your view.</li>
                         <li>Exit the same way. Scale out methodically. Lock in gains while leaving room to run.</li>
                     </ul>
-                    
-                    <div class="pattern-visualizer-container" style="background: rgba(255,255,255,0.01); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
-                        <h4 style="margin-top:0; color: var(--color-primary); font-size: 0.8rem; text-transform: uppercase;">The Danger of Clustering</h4>
-                        <p style="font-size: 0.8rem; line-height: 1.35; margin-bottom: 0.5rem;"><em>Illustration: Picture 5 trades in a row. Each one risks 3%. Three losses = -9%. Two more losses? -15%. You’re rattled, emotional, and now trading to “get it back.”</em></p>
-                        <ul style="font-size: 0.8rem; line-height: 1.3;">
-                            <li><strong>Clustering</strong> is when multiple losses (or wins) occur in quick succession. Even a good system can suffer.</li>
-                            <li><strong>Solution:</strong> Proper risk limits and awareness of market regime. Reduce size or step back when variance spikes.</li>
-                        </ul>
-                        <div class="alert-banner" style="background: rgba(245, 158, 11, 0.05); color: var(--color-warning); border-color: rgba(245, 158, 11, 0.15); padding: 0.5rem; margin-top: 0.5rem; font-size: 0.75rem;">
-                            <strong>Rule of Thumb:</strong> When clustered losses appear, assume the market has changed—or you have. Stop. Reassess.
-                        </div>
-                    </div>
                 `
             },
             {
+                label: "3. Danger of Clustering",
+                subtitle: "The Danger of Clustering",
+                content: `
+                    <p>Clustering occurs when multiple losses (or wins) occur in quick succession. In a high-cluster environment, even a good system can suffer.</p>
+                    
+                    <div class="pattern-visualizer-container" style="background: rgba(255,255,255,0.01); padding: 1rem; border-radius: 8px; margin-top: 0.5rem; border: 1px solid var(--border-color);">
+                        <h4 style="margin-top:0; color: var(--color-primary); font-size: 0.8rem; text-transform: uppercase;">Clustering Variance comparison</h4>
+                        <p style="font-size: 0.8rem; line-height: 1.35; margin-bottom: 0.5rem;"><em>Illustration: Picture 5 trades in a row. Each one risks 3%. Three losses = -9%. Two more losses? -15%. You’re rattled, emotional, and now trading to “get it back.”</em></p>
+                        <div style="display: flex; justify-content: space-around; gap: 1rem; margin-top: 0.75rem;">
+                            <div style="text-align: center;">
+                                <div style="color: var(--color-danger); font-size: 1.15rem; font-weight: 700;">-15.0% Drawdown</div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem;">At 3% risk per trade</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="color: var(--color-success); font-size: 1.15rem; font-weight: 700;">-5.0% Drawdown</div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem;">At 1% risk per trade</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h4>Rule of Thumb:</h4>
+                    <p>When clustered losses appear, assume the market has changed—or you have. **Stop. Reassess.** The solution is proper risk limits and awareness of market regime. Reduce size or step back when variance spikes.</p>
+                `
+            },
+            {
+                label: "4. Risk & Hedging",
                 subtitle: "III. Risk Management – The Art of Not Dying",
                 content: `
                     <h4>The Line in the Sand</h4>
@@ -103,59 +118,25 @@ const courseModules = [
                 `
             },
             {
-                subtitle: "IV. Trading Psychology – The Inner Arena",
+                label: "5. Psychology & routines",
+                subtitle: "IV-VII. Trading Psychology & Routine",
                 content: `
                     <h4>Ego Is Not Your Edge</h4>
                     <ul>
-                        <li>Overconfidence leads to size increases right before a regime change.</li>
-                        <li>Humility keeps you safe. Confidence in process, not prediction.</li>
+                        <li>Overconfidence leads to size increases right before a regime change. Humility keeps you safe. Confidence in process, not prediction.</li>
+                        <li><strong>Be the Analyst of the Trader:</strong> The trader is reactive. The analyst is reflective. Be both. Review every trade. Note emotional action: fear, hesitation, greed.</li>
                     </ul>
                     
-                    <h4>Emotional Mastery</h4>
+                    <h4>Process > Prediction</h4>
                     <ul>
-                        <li>Fight/Flight leads to revenge trades, overtrading, and stubbornness.</li>
-                        <li>Cultivate mindfulness. Observe yourself as you trade. Use journaling.</li>
-                    </ul>
-                    
-                    <div class="pattern-visualizer-container" style="background: rgba(59, 130, 246, 0.03); padding: 1rem; border-radius: 8px; margin-top: 1rem; border: 1px solid rgba(59, 130, 246, 0.15);">
-                        <h4 style="margin-top:0; color: var(--color-primary); font-size: 0.8rem; text-transform: uppercase;">Be the Analyst of the Trader</h4>
-                        <p style="font-size: 0.8rem; line-height: 1.45; margin-bottom: 0.5rem;">The trader is reactive. The analyst is reflective. Be both.</p>
-                        <ul style="font-size: 0.8rem; margin-bottom: 0;">
-                            <li>Review every trade.</li>
-                            <li>Note not just price action, but emotional action: fear, hesitation, greed.</li>
-                        </ul>
-                    </div>
-                `
-            },
-            {
-                subtitle: "V. Process > Prediction & VI. Building Edge",
-                content: `
-                    <h4>Setups, Not Wishes</h4>
-                    <ul>
-                        <li>Only enter trades with clear technical or fundamental rationale.</li>
-                        <li>Avoid impulsive trades based on headlines or FOMO.</li>
-                    </ul>
-                    
-                    <h4>Journaling</h4>
-                    <ul>
-                        <li>Record setup, entry, exit, rationale, and emotional state.</li>
-                        <li>Review monthly. Look for patterns in behaviour.</li>
+                        <li><strong>Setups, Not Wishes:</strong> Only enter trades with clear technical or fundamental rationale. Avoid impulsive trades based on headlines or FOMO.</li>
+                        <li><strong>Journaling:</strong> Record setup, entry, exit, rationale, and emotional state. Review monthly.</li>
                         <li><strong>No Trade = Position:</strong> Sitting out is an active decision. Sideways markets, unclear trends, or mental fatigue = cash is a position.</li>
-                    </ul>
-                    
-                    <h4>Building Edge – Brick by Brick</h4>
-                    <ul>
                         <li><strong>Layered Confluence:</strong> Combine market structure, dynamics, macro news, and price action. The more aligned the signals, the more confident the trade.</li>
-                        <li><strong>Ritual and Routine:</strong> Pre-market scan. Key level mapping. Daily brief (your own or in group). Trade review, even if no trades.</li>
-                        <li><strong>Trade Community:</strong> Solitary trading leads to blind spots. Use your Discord room: test ideas, vent losses, share setups. Iron sharpens iron.</li>
                     </ul>
                     
                     <div class="alert-banner" style="background: rgba(16, 185, 129, 0.05); color: var(--color-success); border-color: rgba(16, 185, 129, 0.15); margin-top: 0.75rem; font-size: 0.8rem;">
-                        <strong>VII. Final Punch – The Trader’s Code:</strong><br>
-                        • Stay alive. That’s the first job.<br>
-                        • Be boring in process, brilliant in execution.<br>
-                        • Size small, think big. Never fall in love with a trade.<br>
-                        <em style="display:block; margin-top:0.25rem; font-size:0.75rem; color: var(--text-muted);">“Consistency isn’t sexy. But neither is losing your house.”</em>
+                        <strong>The Trader’s Code:</strong> Stay alive. That’s the first job. Be boring in process, brilliant in execution. Size small, think big. Never fall in love with a trade. <em style="display:block; margin-top:0.25rem; font-size:0.75rem; color: var(--text-muted);">“Consistency isn’t sexy. But neither is losing your house.”</em>
                     </div>
                 `
             }
@@ -166,156 +147,208 @@ const courseModules = [
         title: "ArcisFX G7 Swing Trading System",
         slides: [
             {
+                label: "1. Welcome & Setup",
                 subtitle: "Welcome & Getting Started",
                 content: `
-                    <p>Welcome to the ArcisFX G7 Swing Trading System. This swing trading model focuses on the 4 "Majors" namely the **EUR/USD, GBP/USD, USD/JPY, and USD/CHF**.</p>
-                    <p>Due to their nature, the majors experience much greater volumes and are therefore highly technical, tending to trend more than other pairs. Trending behavior is required for consistent G7 swing profits.</p>
+                    <p>Thanks for downloading the ArcisFX G7 Swing Trading System. This system focuses on the 4 "Majors" namely the **EUR/USD, GBP/USD, USD/JPY, and USD/CHF**.</p>
+                    <p>Due to their nature, the majors tend to experience much greater volumes and are therefore highly technical, tending to trend more than other pairs. Trending behavior is required for consistent G7 swing profits.</p>
                     
-                    <div class="pattern-visualizer-container" style="background: rgba(255,255,255,0.01); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
-                        <h4 style="margin-top:0; color: var(--color-primary); font-size: 0.8rem; text-transform: uppercase;">Essential Startup Rules</h4>
-                        <ul style="font-size: 0.8rem; line-height: 1.35;">
-                            <li><strong>Demo First:</strong> Highly recommended to "demo" trade for at least 1-3 months (or 3-6 months) before committing real money. Demands of live trading are much greater in terms of stress and emotions.</li>
-                            <li><strong>Patience on Pairs:</strong> Recommend trading 1-2 currencies most of the time, choosing the clearest G7 setups. Trade Euro, Pound, and then Yen in that preference order.</li>
-                            <li><strong>Charts Needed:</strong> MetaTrader 4/5 or TradingView (web-based charting).</li>
+                    <div class="pattern-visualizer-container" style="background: rgba(255,255,255,0.01); padding: 0.85rem; border-radius: 8px; margin-top: 0.75rem; border: 1px solid var(--border-color);">
+                        <h4 style="margin-top:0; color: var(--color-primary); font-size: 0.8rem; text-transform: uppercase;">Startup Rules</h4>
+                        <ul style="font-size: 0.75rem; line-height: 1.35; margin-bottom: 0;">
+                            <li><strong>Demo Trading:</strong> Highly recommend trading on a demo account for at least 1-3 months (or 3-6 months) before committing real money. Demands of real money trading are much greater in terms of stress and emotions.</li>
+                            <li><strong>Pairs:</strong> Recommend trading 1-2 currencies chosen from the majors by selecting the clearest G7 setups. Prefer Euro, Pound, and Yen in that order.</li>
+                            <li><strong>Charts:</strong> MetaTrader 4/5 or TradingView (web-based charting).</li>
                         </ul>
                     </div>
                 `
             },
             {
-                subtitle: "Chart & Indicators Screen Setup",
+                label: "2. Money Management",
+                subtitle: "Money Management, Leverage & Stops",
                 content: `
-                    <p>The G7 system uses 2 time periods for each currency: <strong>Weekly (W)</strong> and <strong>Hourly (1H)</strong>. Display 2 charts for each currency—hourly on top, weekly on bottom (total 6 charts on screen). Charts must be set to display **candlesticks**.</p>
+                    <p>This is one of the most important and most overlooked parts of trading. Many traders take large risks in the hope that they will "get rich quickly" or recover previous losses. Follow these three simple G7 guidelines:</p>
                     
-                    <div class="pattern-visualizer-container" style="background: rgba(59, 130, 246, 0.02); padding: 1.25rem; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.15); display: flex; flex-direction: column; gap: 0.75rem;">
-                        <h4 style="margin-top:0; color: var(--color-primary); font-size: 0.85rem; text-transform: uppercase; display:flex; align-items:center; gap:0.4rem;">
-                            <i class="fa-solid fa-sliders"></i> Required Indicator Configurations
-                        </h4>
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; font-size: 0.8rem; line-height: 1.35;">
-                            <div>
-                                <strong style="color: var(--text-primary);">Hourly Chart (1H) Setup:</strong>
-                                <ol style="margin-left:1rem; margin-top:0.25rem; padding-left:0;">
-                                    <li><strong>100-Hour Bollinger Band</strong> (Dev: 2, Shift: 0)</li>
-                                    <li><strong>200-Hour Bollinger Band</strong> (Dev: 2, Shift: 0)</li>
-                                    <li><strong>200-Period SMA</strong> (Simple Moving Average)</li>
-                                    <li><strong>14/7/3 Slow Stochastic</strong> (Levels: 20/80)</li>
-                                </ol>
-                            </div>
-                            <div>
-                                <strong style="color: var(--text-primary);">Weekly Chart (W) Setup:</strong>
-                                <ol style="margin-left:1rem; margin-top:0.25rem; padding-left:0;">
-                                    <li><strong>10-Week SMA</strong> (Simple Moving Average)</li>
-                                    <li style="color: var(--text-muted); list-style-type: none; margin-top:0.25rem;"><em>No other indicators are required on weekly charts.</em></li>
-                                </ol>
-                            </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem; line-height: 1.4; margin-top: 0.5rem;">
+                        <div>
+                            <strong>1. Never leverage more than 3:1.</strong>
+                            <p style="margin: 0; color: var(--text-secondary); font-size: 0.8rem;">For every dollar in your account, you should not trade more than 3 dollars per position (e.g., if account is $5,000, trade max $15,000 position = 1.5 mini lots). Leverage of 1:1 to 2:1 is optimal.</p>
+                        </div>
+                        <div>
+                            <strong>2. Never risk more than 2% of your account on one trade.</strong>
+                            <p style="margin: 0; color: var(--text-secondary); font-size: 0.8rem;">Risk is easily calculated: Pip stop loss distance * leverage / 100%. If leverage is 3:1 and stop is 30 pips, risk is 0.9%. If stop loss is higher, leverage must be reduced.</p>
+                        </div>
+                        <div>
+                            <strong>3. Always aim for a 2:1 reward/risk ratio in your trades.</strong>
+                            <p style="margin: 0; color: var(--text-secondary); font-size: 0.8rem;">If you are prepared to risk 40 pips, ensure the potential target is at least 80 pips. If risking 50 pips, target must be 100 pips. Try to always aim for twice as much as you risk.</p>
                         </div>
                     </div>
                 `
             },
             {
-                subtitle: "Weekly Direction & Reversal Levels",
+                label: "3. Candlestick Patterns",
+                subtitle: "How to Read Candlestick Charts",
                 content: `
-                    <p>The G7 Swing Logic dictates that we determine trading direction weekly over the weekend using the previous week's closed candle:</p>
+                    <p>Interpretation of candlestick charts is based on patterns. G7 system uses the relationship between highs/lows and open/close over time:</p>
                     
-                    <h4 style="color: var(--color-success); margin-top: 0.5rem;">Bullish Scenarios (Long Trades):</h4>
-                    <ol>
+                    <div class="pattern-visualizer-container" style="background: rgba(255,255,255,0.01); padding: 0.85rem; border-radius: 8px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
+                        <div class="candlestick-col">
+                            <div class="candle-container" style="height: 60px; flex-direction: row; gap: 2px;">
+                                <div style="position: relative; width: 6px; height: 100%;">
+                                    <div class="candle-body bearish" style="height: 35px; top: 10px; width:6px;"></div>
+                                </div>
+                                <div style="position: relative; width: 6px; height: 100%;">
+                                    <div class="candle-body bullish" style="height: 30px; top: 20px; width:6px;"></div>
+                                </div>
+                            </div>
+                            <div class="candle-label" style="font-size:0.65rem;">Piercing Line</div>
+                        </div>
+                        <div class="candlestick-col">
+                            <div class="candle-container" style="height: 60px;">
+                                <div class="candle-wick hammer-wick" style="height: 40px; top: 10px;"></div>
+                                <div class="candle-body bullish hammer-body" style="height: 8px; top: 10px;"></div>
+                            </div>
+                            <div class="candle-label" style="font-size:0.65rem;">Hammer</div>
+                        </div>
+                        <div class="candlestick-col">
+                            <div class="candle-container" style="height: 60px; flex-direction: row; gap: 2px;">
+                                <div style="position: relative; width: 6px; height: 100%;">
+                                    <div class="candle-body bearish" style="height: 15px; top: 25px; width:6px;"></div>
+                                </div>
+                                <div style="position: relative; width: 6px; height: 100%;">
+                                    <div class="candle-body bullish" style="height: 35px; top: 15px; width:6px;"></div>
+                                </div>
+                            </div>
+                            <div class="candle-label" style="font-size:0.65rem;">Engulfing</div>
+                        </div>
+                        <div class="candlestick-col">
+                            <div class="candle-container" style="height: 60px;">
+                                <div class="candle-wick" style="height: 50px; top: 5px;"></div>
+                                <div class="candle-body doji-body"></div>
+                            </div>
+                            <div class="candle-label" style="font-size:0.65rem;">Doji Star</div>
+                        </div>
+                    </div>
+                    
+                    <h4 style="font-size: 0.8rem; margin-top: 0.5rem; text-transform: uppercase; color: var(--color-primary);">G7 Candlestick Formations:</h4>
+                    <ul style="font-size: 0.8rem; line-height: 1.35;">
+                        <li><strong>Bullish Formations:</strong> Piercing line, Hammer (spike low), Morning star, Bullish engulfing, Bullish doji star.</li>
+                        <li><strong>Bearish Formations:</strong> Dark cloud cover, Bearish engulfing, Hanging man, Evening star, Doji star, Shooting star.</li>
+                        <li><strong>Neutral Formations:</strong> Spinning tops, Doji, Double doji, Harami, Long-legged doji, Dragonfly doji, Gravestone doji.</li>
+                    </ul>
+                `
+            },
+            {
+                label: "4. Weekly Direction",
+                subtitle: "Determining Direction & Reversal boundaries",
+                content: `
+                    <p>Compare the past week's candle to previous weekly candles over the weekend to establish the trading scenario:</p>
+                    
+                    <h4 style="color: var(--color-success); font-size: 0.85rem; margin-top: 0.5rem;">Bullish Scenario:</h4>
+                    <ol style="font-size: 0.8rem; line-height: 1.35;">
                         <li>Weekly candle has a higher high and/or higher low than the week before.</li>
-                        <li>Weekly candle has formed a "spike low" reversal candle (Doji, Hammer, Dragonfly, Hanging Man) after a long period of decline (4-8 weeks).</li>
+                        <li>Weekly candle has formed a "spike low" reversal candle (Hammer, Dragonfly, etc.) after a long period of decline (4-8 weeks).</li>
                     </ol>
                     
-                    <h4 style="color: var(--color-danger); margin-top: 0.5rem;">Bearish Scenarios (Short Trades):</h4>
-                    <ol>
+                    <h4 style="color: var(--color-danger); font-size: 0.85rem; margin-top: 0.5rem;">Bearish Scenario:</h4>
+                    <ol style="font-size: 0.8rem; line-height: 1.35;">
                         <li>Weekly candle has a lower high and/or lower low than the week before.</li>
                         <li>Weekly candle has formed a "spike high" reversal candle after a long period of rally (4-8 weeks).</li>
                     </ol>
                     
                     <div class="alert-banner" style="background: rgba(245, 158, 11, 0.05); color: var(--color-warning); border-color: rgba(245, 158, 11, 0.15); margin-top: 0.75rem; font-size: 0.8rem;">
-                        <strong>Determining the Reversal Line (10-Pip Rule):</strong><br>
-                        • <strong>If Bullish:</strong> Place the reversal level **10 pips below the lowest point** of the weekly candle.<br>
-                        • <strong>If Bearish:</strong> Place the reversal level **10 pips above the highest point** of the weekly candle.<br>
-                        If price crosses this boundary during the week, the direction is wrong. Stop trading immediately.
+                        <strong>Determining the Reversal Level (10-Pip Rule):</strong><br>
+                        • <strong>If Bullish direction:</strong> Reversal level is placed **10 pips below the lowest point** of the weekly candle.<br>
+                        • <strong>If Bearish direction:</strong> Reversal level is placed **10 pips above the highest point** of the weekly candle.<br>
+                        Any price move beyond this level invalidates the direction. Stop trading immediately.
                     </div>
                 `
             },
             {
-                subtitle: "G7 Entry Point Rules (1 to 4)",
+                label: "5. Indicators Setup",
+                subtitle: "G7 Chart Indicators Screen Setup",
                 content: `
-                    <p>To initiate a trade, you must switch to the hourly (1H) chart and ensure the following conditions are met:</p>
+                    <p>The G7 system uses a clean statistical probability band setup on your charting package. Set up your screen to display 2 charts for each currency—hourly (1H) at the top, weekly (W) at the bottom (total 6 charts on screen).</p>
                     
-                    <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem; line-height: 1.4;">
+                    <h4>1. Hourly (1H) Chart Indicators:</h4>
+                    <ul>
+                        <li><strong>100-Hour Bollinger Band</strong> (Deviation 2, Shift 0) - preferred color for intermediate limits.</li>
+                        <li><strong>200-Hour Bollinger Band</strong> (Deviation 2, Shift 0) - preferred color for volatility extremes.</li>
+                        <li><strong>200 Period SMA</strong> (Simple Moving Average) - close calculation.</li>
+                        <li><strong>14/7/3 Slow Stochastic Oscillator</strong> - set levels at 20 (oversold) and 80 (overbought).</li>
+                    </ul>
+                    
+                    <h4>2. Weekly (W) Chart Indicators:</h4>
+                    <ul>
+                        <li><strong>10-Week SMA</strong> (Simple Moving Average) - acts as a medium-term guide to market direction. Weekly reversals frequently take place near this average.</li>
+                    </ul>
+                `
+            },
+            {
+                label: "6. Entry Rules 1-4",
+                subtitle: "Determining Entry Points (Rules 1 to 4)",
+                content: `
+                    <p>There are 6 rules used to determine entry points. Conditions for each rule must be in place before a trade can be initiated on the hourly chart:</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem; line-height: 1.45;">
                         <div>
                             <strong>Rule #1: Wait for an hourly close.</strong>
-                            <p style="margin: 0; color: var(--text-secondary); font-size: 0.8rem;">No trade positions should be considered until the hour rollover. Volatility spikes 5-10 minutes before the top of the hour. Let it close.</p>
+                            <p style="margin: 0; color: var(--text-secondary); font-size: 0.8rem;">No trade positions considered until the hour rollover. Volatility increases 5-10 minutes before the top of the hour. Wait for the hourly candle to complete.</p>
                         </div>
                         <div>
                             <strong>Rule #2: Stochastic trigger.</strong>
-                            <p style="margin: 0; color: var(--text-secondary); font-size: 0.8rem;">14/7/3 stochastic must be oversold (below 20) if buying, or overbought (above 80) if selling.</p>
+                            <p style="margin: 0; color: var(--text-secondary); font-size: 0.8rem;">The 14/7/3 stochastic must be oversold (below 20) if buying (long), or overbought (above 80) if selling (short).</p>
                         </div>
                         <div>
                             <strong>Rule #3: Zones of probability.</strong>
-                            <p style="margin: 0; color: var(--text-secondary); font-size: 0.8rem;">Only enter when price is touching or beyond the 100-hour Bollinger Band, 200-hour Bollinger Band, or close to the 200-hour SMA. Any other position is "no-man's land".</p>
+                            <p style="margin: 0; color: var(--text-secondary); font-size: 0.8rem;">Price must be touching or beyond the 100-hour Bollinger Band, touching or beyond the 200-hour Bollinger Band, or touching/near the 200-hour SMA. Any other position is "no-man's land" where trades may not be taken.</p>
                         </div>
                         <div>
-                            <strong>Rule #4: Support, Resistance & Fibs.</strong>
-                            <p style="margin: 0; color: var(--text-secondary); font-size: 0.8rem;">Identify confluence lines—look for retracements to Fibonacci levels (38.2%, 50%, 61.8%, 78.6%), trendlines, or horizontal SR lines.</p>
+                            <strong>Rule #4: Confluence levels.</strong>
+                            <p style="margin: 0; color: var(--text-secondary); font-size: 0.8rem;">Look for confluence zones—retracements to Fibonacci levels (38.2%, 50%, 61.8%, 78.6%), trendlines, or horizontal support/resistance lines (SR lines).</p>
                         </div>
                     </div>
                 `
             },
             {
-                subtitle: "G7 Entry Point Rules (5 & 6)",
+                label: "7. Entry Rules 5-6",
+                subtitle: "Determining Entry Points (Rules 5 to 6)",
                 content: `
-                    <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem; line-height: 1.4;">
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem; line-height: 1.45;">
                         <div>
                             <strong>Rule #5: Hourly Reversal Candle.</strong>
-                            <p style="margin: 0; color: var(--text-secondary); font-size: 0.8rem;">Given Rules 1-4 are met, wait for the hourly candle to close as a reversal trigger shape: Doji, Hammer, Engulfing lines, or Tweezer formations.</p>
+                            <p style="margin: 0; color: var(--text-secondary); font-size: 0.8rem;">Wait for the hourly candle to close as a reversal trigger shape: Doji, Hammer, Engulfing candle, or Tweezer formations.</p>
                         </div>
-                        
-                        <div class="pattern-visualizer-container" style="background: rgba(255,255,255,0.01); padding: 0.75rem; border-radius: 8px; display: flex; justify-content: space-around; align-items: center;">
-                            <div class="candlestick-col" style="width: 70px;">
-                                <div class="candle-container" style="height: 60px;">
-                                    <div class="candle-wick hammer-wick" style="height: 45px; top: 10px;"></div>
-                                    <div class="candle-body bullish hammer-body" style="height: 10px; top: 10px;"></div>
-                                </div>
-                                <div class="candle-label" style="font-size:0.65rem;">Hammer Close</div>
-                            </div>
-                            <div class="candlestick-col" style="width: 70px;">
-                                <div class="candle-container" style="height: 60px; flex-direction: row; gap: 2px;">
-                                    <div style="position: relative; width: 6px; height: 100%;">
-                                        <div class="candle-wick" style="height: 40px; top: 10px; left: 2px;"></div>
-                                        <div class="candle-body bearish" style="height: 15px; top: 20px; width:6px;"></div>
-                                    </div>
-                                    <div style="position: relative; width: 6px; height: 100%;">
-                                        <div class="candle-wick" style="height: 50px; top: 5px; left: 2px;"></div>
-                                        <div class="candle-body bullish" style="height: 35px; top: 10px; width:6px;"></div>
-                                    </div>
-                                </div>
-                                <div class="candle-label" style="font-size:0.65rem;">Engulfing Close</div>
-                            </div>
-                        </div>
-
                         <div>
-                            <strong>Rule #6: Trade risk limits (Stop & Target).</strong>
+                            <strong>Rule #6: Stop and target parameters.</strong>
                             <p style="margin: 0; color: var(--text-secondary); font-size: 0.8rem;">
-                                • Place stop-loss <strong>5-10 pips below/above the reversal candle pattern</strong> used as the trigger.<br>
-                                • Stop loss must never be less than <strong>20 pips</strong> and never more than <strong>60 pips</strong>.<br>
-                                • Profit target must always be <strong>at least double the size of the stop loss (2:1 ratio)</strong>.
+                                a) Always place the trade stop-loss <strong>5-10 pips below/above the reversal candle pattern</strong> used as the trigger (for long trades, add your broker's spread).<br>
+                                b) The stop-loss should <strong>never be less than 20 pips</strong> and <strong>never be more than 60 pips</strong>.<br>
+                                c) The profit target should always be <strong>at least double the size of the stop-loss (2:1 reward/risk ratio)</strong>.
                             </p>
                         </div>
                     </div>
                 `
             },
             {
-                subtitle: "Putting It All Together – Full Example",
+                label: "8. G7 Execution Walkthrough",
+                subtitle: "Putting It All Together & Additional Hints",
                 content: `
-                    <h4>Step-by-Step G7 Walkthrough:</h4>
-                    <ol style="font-size: 0.85rem; line-height: 1.45;">
-                        <li><strong>Determine Direction (Weekly):</strong> Closed weekly candle is bearish. Direction for next week = Short. Reversal level set 10 pips above weekly high (1.8897).</li>
-                        <li><strong>Monitor Hourly (Rule 1):</strong> Monday session rallies toward upper Bollinger Bands. Wait for hourly candle to close.</li>
-                        <li><strong>Check Stochastics (Rule 2):</strong> Stochastic becomes overbought (> 80) near the upper bands.</li>
-                        <li><strong>Confirm Zone & Confluence (Rules 3 & 4):</strong> Price touches upper 100-hour Bollinger Band, and coincides with a 61.8% Fibonacci retracement level.</li>
-                        <li><strong>Trigger Entry (Rule 5):</strong> Hourly candle closes as a Bearish Engulfing pattern. Enter Short immediately.</li>
-                        <li><strong>Manage Risk (Rule 6):</strong> Stop placed 5 pips above the engulfing high (calculated stop distance = 32 pips). Profit target set to 2:1 ratio = 64 pips. Trailing stops applied once in profit to lock gains.</li>
+                    <h4>Full G7 Example Walkthrough:</h4>
+                    <ol style="font-size: 0.8rem; line-height: 1.35; margin-bottom: 0.75rem;">
+                        <li>Determine direction from Weekly chart ➔ candle is bearish ➔ bias = Short. Weekly reversal level set 10 pips above high (1.8897).</li>
+                        <li>Hourly candle rallies toward upper Bollinger Bands on Monday close (Rule 1).</li>
+                        <li>Stochastic becomes overbought (> 80) (Rule 2).</li>
+                        <li>Price touches the top 100-hour Bollinger Band (Rule 3) and confluences with a 61.8% Fibonacci level (Rule 4).</li>
+                        <li>Price forms a Bearish Engulfing reversal candle at hourly close (Rule 5). Enter short trade.</li>
+                        <li>Calculate stop 5 pips above high (calculated stop distance = 32 pips) (Rule 6). Profit target is set to double = 64 pips. Trailing stop employed to lock gains.</li>
                     </ol>
+                    
+                    <h4>Additional Hints:</h4>
+                    <ul style="font-size: 0.8rem; line-height: 1.35;">
+                        <li><strong>Multiple Signals:</strong> If 2 or 3 currencies give signals simultaneously, enter 1 or 2 and hold back on the others. Rather be too cautious than bullish!</li>
+                        <li><strong>Time of Day:</strong> Trade during the European and/or NY sessions only (6AM GMT to 6PM GMT). The Asian market session tends to have thin volume and random price movement.</li>
+                    </ul>
                 `
             }
         ]
@@ -325,102 +358,126 @@ const courseModules = [
         title: "Widow Maker – Natural Gas Trading Techniques",
         slides: [
             {
-                subtitle: "Module 1-2: Market Overview & Drivers",
+                label: "1. Objectives & Scope",
+                subtitle: "Widow Maker Course Objectives and Scope",
                 content: `
-                    <p>Natural gas is a widely used energy resource, supplying roughly **24% of the energy requirements of developed countries**. Because it burns cleaner than coal and oil, it is valued in the global energy mix. However, transportation leakage issues and methane release represent environmental downsides.</p>
-                    
-                    <h4>Key Drivers of Natural Gas Prices:</h4>
+                    <p>Welcome to **Widow Maker: Natural Gas Trading Techniques**. Natural gas is a widely used energy resource, supplying roughly **24% of the energy requirements of developed countries**. It is essential for heating, electricity generation, and industrial processes.</p>
+                    <h4>Course Objectives:</h4>
                     <ul>
-                        <li><strong>Supply and Demand:</strong> Extraction levels, storage inventory balances, and technological advances (e.g. hydraulic fracturing / fracking and horizontal drilling).</li>
-                        <li><strong>Seasonality:</strong> Winter cold drives massive residential and commercial heating demand. Summer heat drives power plant cooling demands.</li>
-                        <li><strong>Geopolitical Influences:</strong> Trade policies, pipeline pipeline regulations, and political instability in major producing zones.</li>
-                        <li><strong>Market Data Sources:</strong> EIA Storage Reports, weather forecasts (<em>natgasweather.com</em>), economic indicators.</li>
+                        <li>To understand the basic structure of the natural gas market and its global energy role.</li>
+                        <li>To learn the fundamental drivers of natural gas prices, including supply, demand, seasonality, and geopolitics.</li>
+                        <li>To master practical technical trading methods and confluences.</li>
+                        <li>To outline a strict framework for risk management, position sizing, and hedging.</li>
                     </ul>
                 `
             },
             {
-                subtitle: "Module 3: Futures vs. Continuous ETFs",
+                label: "2. Role of Natural Gas",
+                subtitle: "The Role of Natural Gas in the Global Energy Market",
                 content: `
-                    <p>Retail commodity traders have two primary instruments to participate in the natural gas market:</p>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.8rem; margin: 0.5rem 0;">
-                        <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); padding: 0.75rem; border-radius: 6px;">
-                            <strong>Natural Gas Futures (NGAS.F / NG1)</strong>
-                            <p style="margin: 0; margin-top: 0.25rem; font-size: 0.75rem; color: var(--text-secondary);">Traded on NYMEX. High purity, leverage, and liquidity, but requires managing rollover risks (contango/backwardation costs).</p>
-                        </div>
-                        <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); padding: 0.75rem; border-radius: 6px;">
-                            <strong>Continuous ETFs (NATGAS)</strong>
-                            <p style="margin: 0; margin-top: 0.25rem; font-size: 0.75rem; color: var(--text-secondary);">No monthly rollover to manage. Simpler access through standard brokerage accounts with lower capital requirements.</p>
-                        </div>
-                    </div>
+                    <p>Natural gas plays a critical role in today’s energy supply across three primary applications:</p>
+                    <ul>
+                        <li><strong>Residential and Commercial Heating:</strong> Primary source for heating buildings. Around **29% of the world’s natural gas consumption** is for heating and residential uses.</li>
+                        <li><strong>Electricity Generation:</strong> Power plants rely on gas for electricity. Roughly **38% of the world’s natural gas consumption** is for generating electricity.</li>
+                        <li><strong>Industrial Use:</strong> Key raw material in chemical manufacturing and industrial processes, accounting for about **33% of global consumption**.</li>
+                    </ul>
+                    <p style="font-size:0.8rem; color: var(--text-muted);">Because gas is abundant and relatively clean compared to other fossil fuels, it is heavily traded globally, though transport leakage remains an environmental issue.</p>
+                `
+            },
+            {
+                label: "3. Key Price Drivers",
+                subtitle: "Key Drivers of Natural Gas Prices",
+                content: `
+                    <h4>1. Supply and Demand</h4>
+                    <ul>
+                        <li><strong>Supply Factors:</strong> Production levels, storage inventory balances (weekly EIA reports), and extraction technologies (fracking, horizontal drilling).</li>
+                        <li><strong>Demand Factors:</strong> Consumption patterns, economic growth, and weather conditions.</li>
+                    </ul>
+                    <h4>2. Seasonality</h4>
+                    <ul>
+                        <li><strong>Winter:</strong> Demand typically rises sharply for heating, leading to higher prices.</li>
+                        <li><strong>Summer:</strong> Demand rises due to cooling requirements for air conditioning.</li>
+                    </ul>
+                    <h4>3. Geopolitical and Environmental Factors</h4>
+                    <ul>
+                        <li>Trade policies, pipeline regulations, political instability in producing regions, and clean energy standards immediately impact supply routes and prices.</li>
+                    </ul>
+                `
+            },
+            {
+                label: "4. Trading Instruments",
+                subtitle: "Futures and Continuous ETFs",
+                content: `
+                    <p>Traders participate in natural gas markets through two primary instruments:</p>
+                    <ul>
+                        <li><strong>Natural Gas Futures (NGAS.F / NG1):</strong> Standardized contracts traded on NYMEX. High purity, leverage, and liquidity, but subject to monthly rollover costs (contango vs backwardation). Tick size is 0.001 per MMBtu ($10 per contract).</li>
+                        <li><strong>Continuous ETFs (NATGAS):</strong> Track gas prices without a futures account or monthly rollovers. Simpler access through standard brokerage accounts.</li>
+                    </ul>
                     
                     <div class="alert-banner" style="background: rgba(239, 68, 68, 0.05); color: var(--color-danger); border-color: rgba(239, 68, 68, 0.15); font-size: 0.75rem; padding: 0.75rem;">
                         <span class="alert-dot" style="background: var(--color-danger);"></span>
-                        <strong>Warning on BOIL & KOLD:</strong> These are 2x leveraged ETFs. They are designed for short-term daily trading. Holding them long-term guarantees losses due to daily volatility decay and compounding drag. <strong>Best left to pros or masochists.</strong>
+                        <strong>Warning on BOIL & KOLD:</strong> These are 2x leveraged ETFs designed for daily speculation. Holding them long-term guarantees massive losses due to daily volatility decay and compounding drag. <strong>Best left to pros or masochists.</strong>
                     </div>
                 `
             },
             {
-                subtitle: "Module 4-5: Technical Analysis & Hedging",
+                label: "5. Indicators & MTF Analysis",
+                subtitle: "Technical Indicators & Multi-Timeframe Analysis",
                 content: `
-                    <p>Technical analysis in natural gas relies on multiple timeframes: daily/weekly charts to define the overall trend, and hourly/4-hourly charts to execute entries.</p>
-                    
-                    <h4>Key Technical Indicators:</h4>
+                    <h4>1. Indicators & Oscillators</h4>
                     <ul>
-                        <li><strong>Bollinger Bands:</strong> Monitor band width for volatility. A "third pierce" of the band indicates extreme overbought/oversold conditions where a reversal is highly likely.</li>
-                        <li><strong>Moving Averages:</strong> Short-term (20 SMA/EMA) and long-term (50 or 200 SMA) confirm trend directions.</li>
-                        <li><strong>Fibonacci Retracement & Extensions:</strong> Retracements (38.2%, 50%, 61.8%) mark pullback entries; extensions set profit targets once trend resumes.</li>
+                        <li><strong>Bollinger Bands:</strong> Monitor band width for volatility. A "third pierce" of the band indicates extreme overbought/oversold conditions where a reversal is likely.</li>
+                        <li><strong>RSI & Stochastics:</strong> Identify overbought/oversold limits. Divergence between RSI/Stochastic and price signals potential reversals.</li>
+                        <li><strong>Fibonacci Retracement & Extensions:</strong> Retracements (38.2%, 50%, 61.8%) identify pullback zones; Extensions define exit targets.</li>
                     </ul>
-                    
-                    <h4>Hedging and Roll Management:</h4>
+                    <h4>2. Multi-Timeframe Analysis</h4>
                     <ul>
-                        <li>Use opposing futures positions or protective options (puts for long positions, calls for short) to offset volatility risk.</li>
-                        <li>In contango markets, rolling front-month futures contracts incurs negative roll yields. Switch to continuous ETFs when roll costs become significant.</li>
+                        <li><strong>Synchronization:</strong> Use daily/weekly charts to identify the broader trend, and hourly/15-minute charts to refine entry points and place stop-losses.</li>
                     </ul>
                 `
             },
             {
-                subtitle: "Module 6: Step-by-Step Trade Initiation Process",
+                label: "6. Step-by-Step Process",
+                subtitle: "Step-by-Step Process to Initiating a Trade",
                 content: `
-                    <p>Before executing any Natural Gas position, follow this 6-step check process:</p>
-                    
-                    <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; line-height: 1.4;">
-                        <div><strong>Step 1: Check COT positioning</strong> on Barchart.com (analyze extreme positions, contango/backwardation, and $2.00-$5.00 range).</div>
-                        <div><strong>Step 2: Check weather and seasonality</strong> on <em>natgasweather.com</em>.</div>
-                        <div><strong>Step 3: Check news, politics, and economics</strong> on <em>myfxbook.com</em>.</div>
-                        <div><strong>Step 4: Check longer-term charts</strong> (daily/weekly) for trend direction.</div>
-                        <div><strong>Step 5: Check the day of the week</strong> (be mindful of weekend gap risk).</div>
-                        <div><strong>Step 6: Look at technicals</strong> on 4-hour, daily, and weekly charts, then apply risk hedging.</div>
-                    </div>
+                    <p>To swing trade Natural Gas safely, follow this 6-step check process before executing a trade:</p>
+                    <ol style="font-size: 0.85rem; line-height: 1.45;">
+                        <li><strong>Check COT positioning</strong> on Barchart.com ( COT net positions, forward ribbon contango/backwardation, and $2.00-$5.00 range).</li>
+                        <li><strong>Check weather and seasonality</strong> on <em>natgasweather.com</em>.</li>
+                        <li><strong>Check news, politics, and economics</strong> on <em>myfxbook.com</em>.</li>
+                        <li><strong>Check longer term charts</strong> (daily/weekly) to establish trend.</li>
+                        <li><strong>Check the day of the week</strong> (avoid entering right before weekend gaps).</li>
+                        <li><strong>Look at technicals</strong> on 4-hour, daily, and weekly charts, then apply risk hedging.</li>
+                    </ol>
                 `
             },
             {
-                subtitle: "Module 9: COT Report Analysis",
+                label: "7. COT Report Analysis",
+                subtitle: "Using Commitments of Traders (COT) Data",
                 content: `
-                    <p>The Commitments of Traders (COT) report details the positions of different market participants. Barchart.com displays this report in simple categories:</p>
+                    <p>The Commitments of Traders (COT) report from Barchart.com is a crucial tool to understand institutional sentiment in Natural Gas:</p>
                     <ul>
-                        <li><strong>Commercials:</strong> Typically producers and hedgers who trade to manage price risk. A net short position indicates they expect lower prices.</li>
-                        <li><strong>Managed Money & Non-Commercials:</strong> Large speculative hedge funds. Extreme net long or net short positions indicate overextended trends that warn of imminent reversals.</li>
+                        <li><strong>Commercials (Producers/Hedgers):</strong> Typically trade against the trend to lock in prices. A net short position among commercials typically indicates they expect lower prices.</li>
+                        <li><strong>Managed Money & Non-Commercials:</strong> Speculative trend-followers (hedge funds). Extreme net long or net short positions indicate overextended trends that warn of imminent reversals.</li>
                         <li><strong>Recognizing Divergence:</strong> If prices are rising but managed money positions start to turn net short, it's a warning signal for a potential trend reversal.</li>
                     </ul>
-                    <p style="font-size: 0.8rem; font-style: italic; color: var(--text-muted); margin-top: 0.5rem;">Cross-reference speculative COT extremes with hourly bullish/bearish engulfing patterns near support/resistance zones to confirm entries.</p>
                 `
             },
             {
-                subtitle: "Trading Checklists & Psychology",
+                label: "8. Checklists & Sizing Plan",
+                subtitle: "Checklists, Sizing Formula & Sizing Plan",
                 content: `
-                    <h4>Natural Gas Daily Checklist:</h4>
-                    <ul style="font-size: 0.8rem; line-height: 1.35;">
-                        <li><strong>Pre-Market Setup:</strong> Boot up platform ➔ Check energy news & weather forecasts ➔ Open COT report ➔ Mark key support/resistance lines on multiple timeframes.</li>
-                        <li><strong>During Market Hours:</strong> Monitor volume spikes ➔ Wait for confirmed technical signals ➔ Verify risk parameters are in place ➔ Execute according to plan.</li>
-                        <li><strong>Trade Management:</strong> Adjust stops to SBE ➔ Log every trade in your journal.</li>
-                        <li><strong>Post-Market Review:</strong> Save charts ➔ Analyze outcomes ➔ Update checklist.</li>
-                    </ul>
+                    <h4>Natural Gas Position Sizing Formula:</h4>
+                    <p style="background: rgba(255,255,255,0.02); padding: 0.5rem; border-radius: 6px; font-family: monospace; border: 1px solid var(--border-color);">
+                        Position size = (Amount at risk per trade) / (Difference between entry and stop-loss price)
+                    </p>
+                    <p style="font-size:0.8rem; color: var(--text-secondary);"><em>Example: With a $10,000 account, risking 1% ($100), and entry-to-stop difference is $0.50 per unit, your position size is 200 units ($100 / $0.50).</em></p>
                     
-                    <h4>Trading Psychology (Module 8):</h4>
-                    <ul>
-                        <li><strong>Ego is not your edge:</strong> Overconfidence leads to size increases right before market changes. Humility keeps you safe.</li>
-                        <li><strong>Techniques for Managing Emotions:</strong> Take regular breaks, practice mindfulness to clear the mind, and rehearse scenario plans.</li>
+                    <h4>Daily Routine Checklist:</h4>
+                    <ul style="font-size:0.8rem; line-height: 1.35; margin-bottom: 0.5rem;">
+                        <li><strong>Pre-Market:</strong> Computer setup ➔ Check weather & news headlines ➔ Open COT report ➔ Load multiple timeframe charts.</li>
+                        <li><strong>During Market:</strong> Monitor volume spikes ➔ Check risk management parameters ➔ Enter according to plan ➔ Place stop-loss or hedge.</li>
+                        <li><strong>Post-Market:</strong> Log every trade in your journal (record setup, rationale, emotion) ➔ Perform daily outcomes analysis.</li>
                     </ul>
                 `
             }
@@ -428,97 +485,243 @@ const courseModules = [
     }
 ];
 
-// Switch views between dashboard and academy
-function switchView(viewName) {
-    const dashboard = document.getElementById("dashboard-view");
-    const academy = document.getElementById("academy-view");
-    const btnDash = document.getElementById("tab-dashboard");
-    const btnAcad = document.getElementById("tab-academy");
+// Initialize application data
+async function initApp() {
+    try {
+        const response = await fetch("portfolio_history.json");
+        if (response.ok) {
+            allHistory = await response.json();
+            console.log("Loaded history successfully, items:", Object.keys(allHistory).length);
+        } else {
+            console.warn("Failed to fetch JSON, using fallback data.");
+            allHistory = fallbackLedgerData;
+        }
+    } catch (e) {
+        console.error("Fetch error", e);
+        allHistory = fallbackLedgerData;
+    }
 
-    if (viewName === "dashboard") {
-        dashboard.style.display = "block";
-        academy.style.display = "none";
-        btnDash.classList.add("active");
-        btnAcad.classList.remove("active");
-    } else {
-        dashboard.style.display = "none";
-        academy.style.display = "block";
-        btnDash.classList.remove("active");
-        btnAcad.classList.add("active");
-        renderSlide();
+    buildTimelineControls();
+    buildCourseSidebars();
+    
+    // Default load slide
+    selectCourseSlide(0, 0);
+    selectCourseSlide(1, 0);
+    selectCourseSlide(2, 0);
+}
+
+// Build course sidebars dynamically
+function buildCourseSidebars() {
+    for (let cIdx = 0; cIdx < 3; cIdx++) {
+        const listContainer = document.getElementById(`c${cIdx + 1}-slide-list`);
+        if (!listContainer) continue;
+        listContainer.innerHTML = "";
+
+        const course = courseModulesData[cIdx];
+        course.slides.forEach((slide, sIdx) => {
+            const btn = document.createElement("button");
+            btn.className = `module-btn ${activeSlideIdxs[cIdx] === sIdx ? 'active' : ''}`;
+            btn.id = `c${cIdx + 1}-btn-${sIdx}`;
+            btn.onclick = () => selectCourseSlide(cIdx, sIdx);
+            btn.innerHTML = `
+                <span class="module-num">${sIdx + 1}</span>
+                <span>${slide.label}</span>
+            `;
+            listContainer.appendChild(btn);
+        });
     }
 }
 
-// Course Module Selector
-function selectCourseModule(moduleIdx) {
-    activeModuleIdx = moduleIdx;
-    activeSlideIdx = 0;
+// Select a specific slide in a course
+function selectCourseSlide(courseIdx, slideIdx) {
+    activeSlideIdxs[courseIdx] = slideIdx;
+    const course = courseModulesData[courseIdx];
+    const slide = course.slides[slideIdx];
+
+    // Update sidebar active highlights
+    const listContainer = document.getElementById(`c${courseIdx + 1}-slide-list`);
+    if (listContainer) {
+        listContainer.querySelectorAll(".module-btn").forEach((btn, idx) => {
+            if (idx === slideIdx) {
+                btn.classList.add("active");
+            } else {
+                btn.classList.remove("active");
+            }
+        });
+    }
+
+    // Update displays
+    document.getElementById(`c${courseIdx + 1}-category`).innerText = course.category;
+    document.getElementById(`c${courseIdx + 1}-title`).innerText = slide.subtitle;
+    document.getElementById(`c${courseIdx + 1}-progress`).innerText = `Slide ${slideIdx + 1} of ${course.slides.length}`;
+    document.getElementById(`c${courseIdx + 1}-body-content`).innerHTML = slide.content;
+}
+
+function nextCourseSlide(courseIdx) {
+    const course = courseModulesData[courseIdx];
+    const currentIdx = activeSlideIdxs[courseIdx];
+    if (currentIdx < course.slides.length - 1) {
+        selectCourseSlide(courseIdx, currentIdx + 1);
+    } else {
+        alert(`Congratulations! You have completed Course ${courseIdx + 1}: ${course.title}!`);
+    }
+}
+
+function prevCourseSlide(courseIdx) {
+    const currentIdx = activeSlideIdxs[courseIdx];
+    if (currentIdx > 0) {
+        selectCourseSlide(courseIdx, currentIdx - 1);
+    }
+}
+
+// Switch main tabs
+function switchView(viewName) {
+    const dashboard = document.getElementById("dashboard-view");
+    const course1 = document.getElementById("course1-view");
+    const course2 = document.getElementById("course2-view");
+    const course3 = document.getElementById("course3-view");
     
-    document.querySelectorAll(".module-btn").forEach((btn, idx) => {
-        if (idx === moduleIdx) {
+    // Hide all
+    dashboard.style.display = "none";
+    course1.style.display = "none";
+    course2.style.display = "none";
+    course3.style.display = "none";
+
+    // Deactivate all buttons
+    document.getElementById("tab-dashboard").classList.remove("active");
+    document.getElementById("tab-course1").classList.remove("active");
+    document.getElementById("tab-course2").classList.remove("active");
+    document.getElementById("tab-course3").classList.remove("active");
+
+    // Show selected
+    if (viewName === "dashboard") {
+        dashboard.style.display = "block";
+        document.getElementById("tab-dashboard").classList.add("active");
+    } else if (viewName === "course1") {
+        course1.style.display = "block";
+        document.getElementById("tab-course1").classList.add("active");
+        selectCourseSlide(0, activeSlideIdxs[0]);
+    } else if (viewName === "course2") {
+        course2.style.display = "block";
+        document.getElementById("tab-course2").classList.add("active");
+        selectCourseSlide(1, activeSlideIdxs[1]);
+    } else if (viewName === "course3") {
+        course3.style.display = "block";
+        document.getElementById("tab-course3").classList.add("active");
+        selectCourseSlide(2, activeSlideIdxs[2]);
+    }
+}
+
+// Hardcoded fallback data in case portfolio_history.json isn't loaded
+const fallbackLedgerData = {
+    "Fri, Jan 30": {
+        date: "Friday, January 30, 2026",
+        notes: "Weekend De-risking. Trimmed SPX500 and NASDAQ sizes. Closed Natural Gas (NGAS.F) completely. Gold short completely closed and flipped to Long (10% size) on massive trend reversal. Added Long Silver hedge spread.",
+        categories: {
+            "Crypto": [
+                { name: "Bitcoin", symbol: "BTCUSD", type: "long", position: "Long 91200, 33.3% hedged at 89300. 33% at 86900. 33% at 85900", size: "30%", chng: "29 Jan" }
+            ],
+            "Metals": [
+                { name: "Gold", symbol: "XAUUSD", type: "long", position: "Long 4920, stop/hedge TBA", size: "10%", chng: "30 Jan" }
+            ]
+        }
+    }
+};
+
+// Build months navigation and horizontal days selector
+function buildTimelineControls() {
+    const keys = Object.keys(allHistory);
+    const months = new Set();
+    keys.forEach(k => months.add(getMonthName(k)));
+    
+    monthsList = Array.from(months).sort((a, b) => getMonthOrder(a) - getMonthOrder(b));
+    
+    const monthContainer = document.getElementById("month-filter-container");
+    monthContainer.innerHTML = "";
+    
+    monthsList.forEach(m => {
+        const btn = document.createElement("button");
+        btn.className = `month-btn ${activeMonth === m ? 'active' : ''}`;
+        btn.innerText = m;
+        btn.onclick = () => selectMonth(m);
+        monthContainer.appendChild(btn);
+    });
+
+    if (!activeMonth && monthsList.length > 0) {
+        const defaultMonth = monthsList.includes("June") ? "June" : monthsList[0];
+        selectMonth(defaultMonth);
+    } else {
+        renderDaysTimeline();
+    }
+}
+
+// Handle month tab click
+function selectMonth(month) {
+    activeMonth = month;
+    
+    document.querySelectorAll(".month-btn").forEach(btn => {
+        if (btn.innerText === month) {
             btn.classList.add("active");
         } else {
             btn.classList.remove("active");
         }
     });
 
-    renderSlide();
-}
-
-// Render active slide
-function renderSlide() {
-    const mod = courseModules[activeModuleIdx];
-    if (!mod) return;
-    const slide = mod.slides[activeSlideIdx];
-    if (!slide) return;
-
-    document.getElementById("slide-category").innerText = mod.category;
-    document.getElementById("slide-title").innerText = slide.subtitle;
-    document.getElementById("slide-progress").innerText = `Slide ${activeSlideIdx + 1} of ${mod.slides.length}`;
+    renderDaysTimeline();
     
-    document.getElementById("slide-body-content").innerHTML = slide.content;
-
-    const prevBtn = document.getElementById("slide-prev-btn");
-    const nextBtn = document.getElementById("slide-next-btn");
-
-    if (activeSlideIdx === 0) {
-        prevBtn.style.opacity = "0.5";
-        prevBtn.style.pointerEvents = "none";
-    } else {
-        prevBtn.style.opacity = "1";
-        prevBtn.style.pointerEvents = "auto";
-    }
-
-    if (activeSlideIdx === mod.slides.length - 1) {
-        nextBtn.innerHTML = `Complete Module <i class="fa-solid fa-check"></i>`;
-    } else {
-        nextBtn.innerHTML = `Next Slide <i class="fa-solid fa-arrow-right"></i>`;
+    const daysInMonth = getDaysOfActiveMonth();
+    if (daysInMonth.length > 0) {
+        setTimelineDay(daysInMonth[0].key);
     }
 }
 
-function nextSlide() {
-    const mod = courseModules[activeModuleIdx];
-    if (activeSlideIdx < mod.slides.length - 1) {
-        activeSlideIdx++;
-        renderSlide();
-    } else {
-        if (activeModuleIdx < courseModules.length - 1) {
-            alert(`Module "${mod.title}" completed! Moving to next module.`);
-            selectCourseModule(activeModuleIdx + 1);
-        } else {
-            alert("Congratulations! You have completed the entire Strategy & Risk Academy course!");
+// Filter sorted days list for active month
+function getDaysOfActiveMonth() {
+    return Object.entries(allHistory)
+        .filter(([key, _]) => getMonthName(key) === activeMonth)
+        .map(([key, value]) => ({ key, value }))
+        .sort((a, b) => getParsedDate(a.key, a.value).getTime() - getParsedDate(b.key, b.value).getTime());
+}
+
+// Render horizontal days list
+function renderDaysTimeline() {
+    const daysList = getDaysOfActiveMonth();
+    const container = document.getElementById("timeline-steps-container");
+    container.innerHTML = "";
+    
+    daysList.forEach(day => {
+        const btn = document.createElement("button");
+        btn.className = `timeline-btn ${activeDay === day.key ? 'active' : ''}`;
+        btn.onclick = () => setTimelineDay(day.key);
+        
+        let weekday = "Day";
+        let datePart = day.key;
+        
+        const commaParts = day.value.date.split(",");
+        if (commaParts.length >= 2) {
+            weekday = commaParts[0].trim();
+            const spaceParts = commaParts[1].trim().split(" ");
+            if (spaceParts.length >= 2) {
+                datePart = `${spaceParts[0]} ${spaceParts[1]}`;
+            }
         }
-    }
+
+        btn.innerHTML = `
+            <span class="day-label">${weekday}</span>
+            <span class="date-label">${datePart}</span>
+        `;
+        container.appendChild(btn);
+    });
+
+    setTimeout(() => {
+        const activeBtn = container.querySelector(".timeline-btn.active");
+        if (activeBtn) {
+            activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+    }, 100);
 }
 
-function prevSlide() {
-    if (activeSlideIdx > 0) {
-        activeSlideIdx--;
-        renderSlide();
-    }
-}
-
-// Render dynamic position rows inside active ledger
+// Render position rows inside active ledger
 function renderLedger() {
     const data = allHistory[activeDay];
     if (!data) return;
@@ -569,14 +772,6 @@ function renderLedger() {
     });
 }
 
-// Resolve visual type based on position description
-function getTypeForPosition(pos) {
-    const lower = pos.toLowerCase();
-    if (lower.includes("short")) return "short";
-    if (lower.includes("hedged") || lower.includes("hedge")) return "hedged";
-    return "long";
-}
-
 // Select an asset to display detail cards and sync charts
 function selectAsset(asset, assetType) {
     selectedAsset = asset;
@@ -604,7 +799,6 @@ function selectAsset(asset, assetType) {
 
     loadTradingViewChart(getSymbolForAsset(asset.name));
 
-    // Sync Sizing Simulator Stop Loss distance if available
     const posLower = asset.position.toLowerCase();
     let detectedDrawdown = 25;
     if (posLower.includes("stop/hedge") || posLower.includes("hedged")) {
@@ -691,10 +885,7 @@ function calculateRisk() {
     const riskPercent = parseFloat(document.getElementById("sim-size-slider").value); 
     const stopDistancePercent = parseFloat(document.getElementById("sim-drawdown-slider").value); 
 
-    // Risk Unit = Capital * Risk%
     const riskUnit = totalCapital * (riskPercent / 100);
-
-    // Recommended position sizing allocation = Risk % / Stop Distance %
     const recommendedAllocation = (riskPercent / stopDistancePercent) * 100;
     const positionValue = totalCapital * (recommendedAllocation / 100);
 
@@ -769,7 +960,7 @@ This allows you to capture news-driven liquidity sweeps while avoiding the initi
     }
 
     if (textLower.includes("gold") && (textLower.includes("flip") || textLower.includes("reversal") || textLower.includes("long") || textLower.includes("short"))) {
-        return `Looking at the historical data, Gold (XAUUSD) was shorted (up to 75% size) during late January resistance tests. However, on Friday, Jan 30, Gold confirmed a structural breakout above key resistance. In veteran trading, you never fight the momentum breakout. The short positions were closed, and a 10% test Long position was initiated at 4920. This caps trade risk while allowing participation in the new trend.`;
+        return `Gold (XAUUSD) was shorted (60-75% size) during late January resistance sweeps. On Friday, Jan 30, Gold broke out of key structural resistance, triggering an immediate regime-shift. Following G7 reversal rules, shorts were closed and a 10% test Long was opened at 4920. This caps initial risk while participating in the new trend.`;
     }
 
     if (textLower.includes("coin") || textLower.includes("mstr") || textLower.includes("100%")) {
@@ -780,7 +971,6 @@ This allows you to capture news-driven liquidity sweeps while avoiding the initi
         return `Bitcoin (BTCUSD) positions are protected by staggered hedge levels (e.g. 1/3 at 89300, 1/3 at 86900, 1/3 at 85900). This tiered stop structure prevents a single 'wick sweep' from fully liquidating your core long position, giving the trade breathing room while progressively locking in downside protection.`;
     }
 
-    const count = Object.keys(allHistory).length;
     return `I have parsed the 106-day veteran trading portfolio. I can answer questions about specific trades, explain my stop-loss / SBE adjustments, or detail my staggered hedge levels for crypto, metals, and index positions. What trade details would you like me to look up?`;
 }
 
@@ -864,6 +1054,72 @@ function injectNewDay(filename) {
     setTimelineDay(displayKey);
     
     appendChatMessage(`I have parsed your uploaded sheet "${filename}". I extracted the assets and plotted them into the timeline as "Parsed Upload". Check the list to see position levels.`, "ai");
+}
+
+// Load TradingView chart
+function loadTradingViewChart(symbol) {
+    const container = document.getElementById("tradingview-chart-div");
+    container.innerHTML = "";
+
+    const mapped = mapTickerToTVSymbol(symbol);
+
+    try {
+        if (typeof TradingView !== 'undefined') {
+            new TradingView.widget({
+                "autosize": true,
+                "symbol": mapped,
+                "interval": "D",
+                "timezone": "Etc/UTC",
+                "theme": "dark",
+                "style": "1",
+                "locale": "en",
+                "toolbar_bg": "#121824",
+                "enable_publishing": false,
+                "hide_side_toolbar": false,
+                "allow_symbol_change": true,
+                "container_id": "tradingview-chart-div"
+            });
+        } else {
+            container.innerHTML = `
+                <div class="tv-placeholder">
+                    <span>Chart Loading offline</span>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Symbol: ${mapped}</span>
+                </div>`;
+        }
+    } catch (e) {
+        container.innerHTML = `<div class="tv-placeholder">Chart unavailable: ${symbol}</div>`;
+    }
+}
+
+// Update Active timeline day
+function setTimelineDay(dayKey) {
+    activeDay = dayKey;
+    
+    document.querySelectorAll(".timeline-btn").forEach(btn => {
+        if (btn.querySelector(".date-label").innerText.includes(dayKey.split(" ").slice(1).join(" "))) {
+            btn.classList.add("active");
+        } else {
+            btn.classList.remove("active");
+        }
+    });
+
+    renderLedger();
+    
+    const currentData = allHistory[activeDay];
+    if (currentData) {
+        let firstAsset = null;
+        const catOrder = ["Currencies", "Stocks/ETF's", "Metals", "Crypto", "Energies", "Commodities"];
+        for (const cat of catOrder) {
+            const arr = currentData.categories[cat] || [];
+            if (arr.length > 0) {
+                firstAsset = arr[0];
+                break;
+            }
+        }
+        if (firstAsset) {
+            selectAsset(firstAsset, getTypeForPosition(firstAsset.position));
+        }
+    }
 }
 
 // Bind Events on Page Load

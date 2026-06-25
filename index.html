@@ -107,8 +107,14 @@
                 <button class="nav-tab active" onclick="switchView('dashboard')" id="tab-dashboard">
                     <i class="fa-solid fa-chart-line"></i> Strategy Dashboard
                 </button>
-                <button class="nav-tab" onclick="switchView('academy')" id="tab-academy">
-                    <i class="fa-solid fa-graduation-cap"></i> Mentor Academy (Course)
+                <button class="nav-tab" onclick="switchView('course1')" id="tab-course1">
+                    <i class="fa-solid fa-shield-halved"></i> Course 1: Grown-Up Rules
+                </button>
+                <button class="nav-tab" onclick="switchView('course2')" id="tab-course2">
+                    <i class="fa-solid fa-graduation-cap"></i> Course 2: G7 Swing Forex
+                </button>
+                <button class="nav-tab" onclick="switchView('course3')" id="tab-course3">
+                    <i class="fa-solid fa-fire"></i> Course 3: NATGAS Widow Maker
                 </button>
             </div>
 
@@ -300,64 +306,87 @@
                 </div>
             </div>
 
-            <!-- Academy View (Course) -->
-            <div id="academy-view" style="display: none;">
+            <!-- Course 1 View -->
+            <div id="course1-view" style="display: none;">
                 <div class="academy-container">
-                    
-                    <!-- Academy Sidebar -->
                     <aside class="academy-sidebar">
                         <div class="module-title-row">
-                            <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-primary);"><i class="fa-solid fa-graduation-cap"></i> Mentor Academy</h3>
-                            <span style="font-size: 0.75rem; color: var(--text-muted);">ArcisFX & Grown-Up Rules</span>
+                            <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary);">Course 1 Pages</h3>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">Trade Like a Grown-Up</span>
                         </div>
-                        
-                        <div class="module-list">
-                            <button class="module-btn active" onclick="selectCourseModule(0)" id="mod-btn-0">
-                                <span class="module-num">1</span>
-                                <span>Trade Like a Grown-Up</span>
-                            </button>
-                            <button class="module-btn" onclick="selectCourseModule(1)" id="mod-btn-1">
-                                <span class="module-num">2</span>
-                                <span>G7 Swing Trading System</span>
-                            </button>
-                            <button class="module-btn" onclick="selectCourseModule(2)" id="mod-btn-2">
-                                <span class="module-num">3</span>
-                                <span>Backtesting, News & Events</span>
-                            </button>
-                            <button class="module-btn" onclick="selectCourseModule(3)" id="mod-btn-3">
-                                <span class="module-num">4</span>
-                                <span>Hedgehog & Risk Lock</span>
-                            </button>
-                            <button class="module-btn" onclick="selectCourseModule(4)" id="mod-btn-4">
-                                <span class="module-num">5</span>
-                                <span>NATGAS 'Widow Maker'</span>
-                            </button>
-                        </div>
+                        <div class="module-list" id="c1-slide-list"></div>
                     </aside>
-
-                    <!-- Academy Main Display Card -->
                     <div class="course-slide-card">
                         <div class="slide-header">
                             <div class="slide-title-group">
-                                <span class="slide-category" id="slide-category">Module 1: Money Management</span>
-                                <span class="slide-title" id="slide-title">Risk Sizing & Surviving the Game</span>
+                                <span class="slide-category" id="c1-category">Category</span>
+                                <span class="slide-title" id="c1-title">Title</span>
                             </div>
-                            <span class="slide-progress" id="slide-progress">Slide 1 of 5</span>
+                            <span class="slide-progress" id="c1-progress">Slide 1 of 5</span>
                         </div>
-                        
-                        <!-- Slide Content Body -->
-                        <div class="slide-body" id="slide-body-content">
-                            <!-- Populated dynamically by app.js -->
-                        </div>
-                        
+                        <div class="slide-body" id="c1-body-content"></div>
                         <div class="slide-footer">
-                            <button class="slide-nav-btn" id="slide-prev-btn" onclick="prevSlide()"><i class="fa-solid fa-arrow-left"></i> Previous</button>
-                            <button class="slide-nav-btn primary" id="slide-next-btn" onclick="nextSlide()">Next Slide <i class="fa-solid fa-arrow-right"></i></button>
+                            <button class="slide-nav-btn" onclick="prevCourseSlide(0)"><i class="fa-solid fa-arrow-left"></i> Previous</button>
+                            <button class="slide-nav-btn primary" onclick="nextCourseSlide(0)">Next Slide <i class="fa-solid fa-arrow-right"></i></button>
                         </div>
                     </div>
-
                 </div>
             </div>
+
+            <!-- Course 2 View -->
+            <div id="course2-view" style="display: none;">
+                <div class="academy-container">
+                    <aside class="academy-sidebar">
+                        <div class="module-title-row">
+                            <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary);">Course 2 Pages</h3>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">G7 Swing Trading System</span>
+                        </div>
+                        <div class="module-list" id="c2-slide-list"></div>
+                    </aside>
+                    <div class="course-slide-card">
+                        <div class="slide-header">
+                            <div class="slide-title-group">
+                                <span class="slide-category" id="c2-category">Category</span>
+                                <span class="slide-title" id="c2-title">Title</span>
+                            </div>
+                            <span class="slide-progress" id="c2-progress">Slide 1 of 8</span>
+                        </div>
+                        <div class="slide-body" id="c2-body-content"></div>
+                        <div class="slide-footer">
+                            <button class="slide-nav-btn" onclick="prevCourseSlide(1)"><i class="fa-solid fa-arrow-left"></i> Previous</button>
+                            <button class="slide-nav-btn primary" onclick="nextCourseSlide(1)">Next Slide <i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Course 3 View -->
+            <div id="course3-view" style="display: none;">
+                <div class="academy-container">
+                    <aside class="academy-sidebar">
+                        <div class="module-title-row">
+                            <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary);">Course 3 Pages</h3>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">NATGAS Widow Maker</span>
+                        </div>
+                        <div class="module-list" id="c3-slide-list"></div>
+                    </aside>
+                    <div class="course-slide-card">
+                        <div class="slide-header">
+                            <div class="slide-title-group">
+                                <span class="slide-category" id="c3-category">Category</span>
+                                <span class="slide-title" id="c3-title">Title</span>
+                            </div>
+                            <span class="slide-progress" id="c3-progress">Slide 1 of 8</span>
+                        </div>
+                        <div class="slide-body" id="c3-body-content"></div>
+                        <div class="slide-footer">
+                            <button class="slide-nav-btn" onclick="prevCourseSlide(2)"><i class="fa-solid fa-arrow-left"></i> Previous</button>
+                            <button class="slide-nav-btn primary" onclick="nextCourseSlide(2)">Next Slide <i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
     <!-- OCR Scanner Overlay -->
