@@ -1,61 +1,314 @@
 // Global App State
 let activeDay = "";
 let selectedAsset = null;
-let allHistory = {}; // Will load from portfolio_history.json
+let allHistory = {}; // Load from portfolio_history.json
 let monthsList = [];
 let activeMonth = "";
 
-// Hardcoded fallback data in case portfolio_history.json isn't loaded
-const fallbackLedgerData = {
-    "Fri, Jan 30": {
-        dateString: "Friday, January 30, 2026",
-        notes: "Weekend De-risking. Trimmed SPX500 and NASDAQ sizes. Closed Natural Gas (NGAS.F) completely. Gold short completely closed and flipped to Long (10% size) on massive trend reversal. Added Long Silver hedge spread.",
-        categories: {
-            "Crypto": [
-                { name: "Bitcoin", symbol: "BTCUSD", type: "long", position: "Long 91200, 33.3% hedged at 89300. 33% at 86900. 33% at 85900", size: "30%", chng: "29 Jan", reasoning: "Symmetric protection active for Bitcoin." }
-            ],
-            "Metals": [
-                { name: "Gold", symbol: "XAUUSD", type: "long", position: "Long 4920, stop/hedge TBA", size: "10%", chng: "30 Jan", reasoning: "Flipped from short to long on breakout." }
-            ]
-        }
+// Course Slide Database
+let activeModuleIdx = 0;
+let activeSlideIdx = 0;
+
+const courseModules = [
+    {
+        category: "Module 1: Money Management",
+        title: "Trade Like a Grown-Up (Defence First)",
+        slides: [
+            {
+                subtitle: "Trading Is Not Gambling",
+                content: `
+                    <p>Trading is a game of probabilities wrapped in uncertainty, powered by human emotion. Dr. David Paul famously said: <em>"A winning system with a losing mindset is a losing system."</em></p>
+                    <div class="alert-banner" style="background: rgba(59, 130, 246, 0.05); color: var(--color-primary); border-color: rgba(59, 130, 246, 0.15); margin: 0.5rem 0;">
+                        <span class="alert-dot" style="background: var(--color-primary);"></span>
+                        <strong>Key Takeaway:</strong> You are not here to be right. You are here to survive long enough to be right enough. Your weapon is process; your shield is risk management; your undoing is ego.
+                    </div>
+                    <h4>The Survival Rules:</h4>
+                    <ul>
+                        <li>Never treat trades as coin flips. Seek confluent edges.</li>
+                        <li>Sitting out in cash is an active, positive market position.</li>
+                        <li>Consistency isn't sexy. But neither is losing your house.</li>
+                    </ul>
+                `
+            },
+            {
+                subtitle: "Position Sizing & DCA Units",
+                content: `
+                    <p>Standard retail traders risk random chunks of capital on single setups. Professional portfolio management operates strictly under the <strong>1% to 2% Risk Rule</strong>.</p>
+                    <h4>Key Money Guidelines:</h4>
+                    <ul>
+                        <li><strong>Never risk more than 1-2% of total capital</strong> on a single position. If stopped out, the loss must not exceed this margin.</li>
+                        <li><strong>Think in Risk Units</strong>: Sizing is defined by stop-loss distance. A 100% position size is acceptable ONLY if the downside is hedged or stopped within your 1-2% capital risk unit.</li>
+                        <li><strong>DCA In and Out:</strong> Enter in measured clips (scale-in) to let the market confirm your view. Scale-out methodically to lock in profits while leaving room to run.</li>
+                    </ul>
+                `
+            },
+            {
+                subtitle: "The Danger of Clustering",
+                content: `
+                    <p>Clustering occurs when multiple losses (or wins) take place in quick succession. This triggers emotional bias, revenge trading, and overleveraging.</p>
+                    <div class="pattern-visualizer-container">
+                        <div class="candlestick-col" style="width: 140px;">
+                            <div style="color: var(--color-danger); font-size: 1.25rem; font-weight: 700;">-15% Drawdown</div>
+                            <div class="candle-label">5 consecutive 3% losses</div>
+                        </div>
+                        <div class="candlestick-col" style="width: 140px;">
+                            <div style="color: var(--color-success); font-size: 1.25rem; font-weight: 700;">-5% Drawdown</div>
+                            <div class="candle-label">5 losses at 1% Risk Unit</div>
+                        </div>
+                    </div>
+                    <h4>How to combat Variance spikes:</h4>
+                    <ul>
+                        <li>When clustered losses appear, assume the market regime has changed (or your focus has). **Stop and reassess**.</li>
+                        <li>Reduce position sizes by half or step back from active trading.</li>
+                        <li>Never trade to "get it back" (emotional revenge trading).</li>
+                    </ul>
+                `
+            },
+            {
+                subtitle: "The Line in the Sand & Counter-Hedging",
+                content: `
+                    <p>Every trade must have a clear invalidation point—a technical or fundamental level where your thesis "no longer makes sense."</p>
+                    <h4>Hedge-and-Hold over Stop Slippage:</h4>
+                    <ul>
+                        <li>Instead of setting raw market stop-losses that trigger massive slippage during thin liqudity, use **counter-trades** or option contracts to balance risk.</li>
+                        <li><strong>Example:</strong> In a long Natural Gas (NGAS.F) macro trade, if price breaks support, short a correlated energy asset (WTI) or buy protective put contracts to neutralize net delta exposure.</li>
+                        <li>This lets you hold the structural setup without risking liquidation or premature stop-outs on market wicks.</li>
+                    </ul>
+                `
+            },
+            {
+                subtitle: "Applied Example: NASDAQ & USDX",
+                content: `
+                    <p>Let's look at how the 40-year veteran applied these money codes in the Jan 2026 logs:</p>
+                    <ul>
+                        <li><strong>USDX Long:</strong> Sized at 10% on Jan 26. Invalidation was 98.60 (just below 99.30 entry). On Jan 27, price dipped; he scaled in (doubled size to 20% at 98.15) and locked stop/hedge at 98.60, creating a risk-locked profitable structure.</li>
+                        <li><strong>NASDAQ SBE Lock:</strong> Sized at 30% long. On Jan 28, following a strong gain, the stop-loss was raised to entry (25110). This moved the trade into **Risk-Free Mode**, protecting the core portfolio.</li>
+                        <li><strong>Friday De-risking:</strong> On Friday, Jan 30, the veteran trimmed SPX500 from 30% to 15% and NASDAQ from 30% to 20% before the weekend close, locking cash gains and protecting against weekend gap-downs.</li>
+                    </ul>
+                `
+            }
+        ]
+    },
+    {
+        category: "Module 2: Technical Strategy",
+        title: "ArcisFX G7 Swing Trading System",
+        slides: [
+            {
+                subtitle: "Multi-Timeframe Structure",
+                content: `
+                    <p>The G7 Swing Trading system is a high-probability model built on two key time periods for major currency pairs (EURUSD, GBPUSD, USDJPY, USDCHF):</p>
+                    <ul>
+                        <li><strong>Weekly (W) Charts:</strong> Used to determine the overall weekly trend direction and define macro reversal boundaries.</li>
+                        <li><strong>Hourly (1H) Charts:</strong> Used to execute entries and manage micro targets.</li>
+                    </ul>
+                    <p>We trade in the direction of the weekly trend. If the weekly bias is bullish, we only buy dips on the hourly chart. If bearish, we only short rallies.</p>
+                `
+            },
+            {
+                subtitle: "Indicator Screen Setup",
+                content: `
+                    <p>The G7 system is not primarily indicator-driven, but uses a clean statistical probability band setup on the charts:</p>
+                    <h4>1. Hourly (1H) Indicators:</h4>
+                    <ul>
+                        <li><strong>100-Hour Bollinger Band</strong> (Deviation 2, Shift 0) - represents intermediate volatility boundaries.</li>
+                        <li><strong>200-Hour Bollinger Band</strong> (Deviation 2, Shift 0) - represents major volatility extremes.</li>
+                        <li><strong>200-Period SMA</strong> (Simple Moving Average) - acts as the baseline probability gravity point.</li>
+                        <li><strong>14/7/3 Slow Stochastic Oscillator</strong> - oversold/overbought indicator.</li>
+                    </ul>
+                    <h4>2. Weekly (W) Indicators:</h4>
+                    <ul>
+                        <li><strong>10-Week SMA</strong> - serves as a medium-term guide to market direction. Reversals frequently occur near this line.</li>
+                    </ul>
+                `
+            },
+            {
+                subtitle: "Weekly Bias & Reversal Boundaries",
+                content: `
+                    <p>Every weekend, determine the upcoming week's bias by comparing the closed weekly candle to the previous week:</p>
+                    <ul>
+                        <li><strong>Bullish Scenario:</strong> Weekly candle has a higher high and/or higher low, or has formed a "spike low" hammer at a major support zone.</li>
+                        <li><strong>Bearish Scenario:</strong> Weekly candle has a lower high and/or lower low, or has formed a "spike high" shooting star.</li>
+                        <li><strong>The Reversal Line (10-Pip rule):</strong> If bullish, place the reversal boundary **10 pips below the weekly low**. If price drops below this line during the week, the bias is invalidated and long trading must stop.</li>
+                    </ul>
+                `
+            },
+            {
+                subtitle: "The 6 Entry Point Rules",
+                content: `
+                    <p>A trade is initiated ONLY if all six conditions align on the hourly (1H) chart:</p>
+                    <ul>
+                        <li><strong>Rule 1: Wait for Hourly Close.</strong> Never trade mid-candle; enter only on hour rollover when volatility stabilizes.</li>
+                        <li><strong>Rule 2: Stochastic check.</strong> Stochastic must be oversold (&lt; 20) for buying, or overbought (&gt; 80) for selling.</li>
+                        <li><strong>Rule 3: Volatility zone.</strong> Price must touch or pierce the 100-hour BB, 200-hour BB, or 200-hour SMA.</li>
+                        <li><strong>Rule 4: Confluence levels.</strong> Look for horizontal support/resistance (SR), trendlines, or Fibonacci retracements (38.2%, 50%, 61.8%, 78.6%).</li>
+                        <li><strong>Rule 5: Reversal Candle.</strong> Wait for a clear candlestick confirmation trigger (e.g., Hammer, Engulfing candle) at the close.</li>
+                        <li><strong>Rule 6: Trade parameters.</strong> Place stop loss **5-10 pips beyond the reversal candle** (min 20 pips, max 60 pips). Target is minimum 2:1 Reward/Risk.</li>
+                    </ul>
+                `
+            },
+            {
+                subtitle: "G7 Candlestick Visualizer",
+                content: `
+                    <p>The G7 system relies heavily on specific candle structures at key support/resistance zones to confirm entries:</p>
+                    <div class="pattern-visualizer-container">
+                        <div class="candlestick-col">
+                            <div class="candle-container">
+                                <div class="candle-wick hammer-wick"></div>
+                                <div class="candle-body bullish hammer-body"></div>
+                            </div>
+                            <div class="candle-label">Hammer<br>(Spike Low)</div>
+                        </div>
+                        <div class="candlestick-col">
+                            <div class="candle-container" style="flex-direction: row; gap: 4px;">
+                                <div style="position: relative; width: 10px; height: 100px;">
+                                    <div class="candle-wick" style="height: 90px; top: 5px; left: 4px;"></div>
+                                    <div class="candle-body bearish pierce1-body" style="width: 10px; left: 0;"></div>
+                                </div>
+                                <div style="position: relative; width: 10px; height: 100px;">
+                                    <div class="candle-wick" style="height: 90px; top: 5px; left: 4px;"></div>
+                                    <div class="candle-body bullish pierce2-body" style="width: 10px; left: 0;"></div>
+                                </div>
+                            </div>
+                            <div class="candle-label">Piercing Line<br>(Bullish Reversal)</div>
+                        </div>
+                        <div class="candlestick-col">
+                            <div class="candle-container" style="flex-direction: row; gap: 4px;">
+                                <div style="position: relative; width: 10px; height: 100px;">
+                                    <div class="candle-wick" style="height: 80px; top: 10px; left: 4px;"></div>
+                                    <div class="candle-body bearish engulf1-body" style="width: 10px; left: 0;"></div>
+                                </div>
+                                <div style="position: relative; width: 10px; height: 100px;">
+                                    <div class="candle-wick" style="height: 95px; top: 2px; left: 4px;"></div>
+                                    <div class="candle-body bullish engulf2-body" style="width: 10px; left: 0;"></div>
+                                </div>
+                            </div>
+                            <div class="candle-label">Bullish Engulfing<br>(Strong buying)</div>
+                        </div>
+                        <div class="candlestick-col">
+                            <div class="candle-container">
+                                <div class="candle-wick" style="height: 80px; top: 10px;"></div>
+                                <div class="candle-body doji-body"></div>
+                            </div>
+                            <div class="candle-label">Doji Star<br>(Indecision)</div>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.8rem; text-align: center; color: var(--text-muted);">Confirm these shapes on the hourly close (Rule 5) before hitting buy or sell.</p>
+                `
+            }
+        ]
+    },
+    {
+        category: "Module 3: Advanced Testing",
+        title: "Backtesting, News & Macro Events",
+        slides: [
+            {
+                subtitle: "News Events & Macro Regimes",
+                content: `
+                    <p>Veterans backtest their models against historical news releases. Major events like CPI, NFP, GDP, or FOMC rate decisions generate massive volatility that violates standard technical structures.</p>
+                    <h4>How the Veteran Trades Around News:</h4>
+                    <ul>
+                        <li><strong>Avoid the Release Wick:</strong> Never enter a trade minutes before or during a high-impact news release. Spread markup and slippage will ruin your risk ratio.</li>
+                        <li><strong>Let the Volatility Settle:</strong> Wait for the news release hourly candle to close. If the news swept the 200-hour Bollinger Band and closed as a reversal Hammer (Rule 5), a high-probability trigger is formed.</li>
+                        <li><strong>Macro Correlation Check:</strong> Ensure that index trends align with interest rate/currency direction (e.g. SPX/NASDAQ strength correlates with USDX weakness).</li>
+                    </ul>
+                `
+            },
+            {
+                subtitle: "Event Drift & Backtesting",
+                content: `
+                    <p>To backtest effectively, you must map the technical setup alongside historical macro dates:</p>
+                    <ul>
+                        <li>Go back in your charts to major news dates (e.g. CPI print days).</li>
+                        <li>Examine how price behaved around the 100/200 Bollinger Bands on the 1-hour chart post-release.</li>
+                        <li>Calculate the hit rate of G7 Entry Rule 2 (Stochastics oversold/overbought) after news-driven washes. You will find that stochastics washes at 200-hour SMA offer the most robust win rates.</li>
+                    </ul>
+                `
+            },
+            {
+                subtitle: "Applied Example: WTI & Gold",
+                content: `
+                    <p>Look at the veteran's logs during late January news cycles:</p>
+                    <ul>
+                        <li><strong>WTI Crude (Jan 29):</strong> Sized short at 60% after WTI swept range highs on inventory news. Hedges were TBA while waiting for weekly inventory structures to stabilize.</li>
+                        <li><strong>Gold Reversal (Jan 30):</strong> Gold swept shorts at 4482 and broke out of macro channels on a Friday. The veteran immediately cut the 75% short and flipped to a 10% test Long. This shows **flexibility over stubbornness** in response to structural news gaps.</li>
+                    </ul>
+                `
+            }
+        ]
+    },
+    {
+        category: "Module 4: Risk Lock & Hedging",
+        title: "Hedgehog & Risk Lock Systems",
+        slides: [
+            {
+                subtitle: "The Hedgehog Strategy",
+                content: `
+                    <p>The **Hedgehog Strategy** is a risk-neutral model where you use correlated assets or options to balance risk, rather than triggering raw stop-losses.</p>
+                    <h4>Core Principles:</h4>
+                    <ul>
+                        <li>When a position goes into drawdown, instead of taking a permanent loss on a market stop, you open an opposite position in a highly correlated asset or option.</li>
+                        <li><strong>Example (Silver Jan 30):</strong> The veteran held a 7.5% Short on Silver at 90.40, fully hedged at 93.52. As price drifted, he added a Long position at 105.30, 50% hedged at 84. This creates a net spread box that collects spread margins while neutralizing directional risk.</li>
+                        <li>This prevents capital bleeding during choppy, uncertain macro environments.</li>
+                    </ul>
+                `
+            },
+            {
+                subtitle: "The Risk Lock Method",
+                content: `
+                    <p>The **Risk Lock** system is a trailing defense model designed to lock in trade value as price moves in your favor:</p>
+                    <ul>
+                        <li><strong>Phase 1 (Entry):</strong> Position is entered with a defined stop or options hedge (Max risk 1.5% capital).</li>
+                        <li><strong>Phase 2 (SBE Lock):</strong> Once price reaches 1.5x of the initial risk value, the stop is moved to entry (SBE). Risk is now 0%.</li>
+                        <li><strong>Phase 3 (Trailing Hedge):</strong> As price makes new highs, add staggered hedges (like BTC on Jan 29: 33.3% hedged at 89.3k, 33.3% at 86.9k, 33.3% at 85.9k). This trailing hedge locks in partial profits while keeping 2/3 of the position open to run.</li>
+                    </ul>
+                `
+            },
+            {
+                subtitle: "Your Capital Allocation Plan",
+                content: `
+                    <p>You have three accounts totaling approximately <strong>$22,140 USD Equiv.</strong> ($18,000 CAD + $6,400 USD + $2,600 USD). Here is how you should allocate risk like the veteran:</p>
+                    
+                    <h4>1. Account A ($18,000 CAD) - Core Swing Account</h4>
+                    <ul>
+                        <li><strong>Allocation focus:</strong> Forex Majors (EURUSD, GBPUSD) and Index ETFs (SPY, QQQ).</li>
+                        <li><strong>Max Risk Unit (1.5%):</strong> $270 CAD per trade.</li>
+                        <li><strong>Position Sizing:</strong> If trading GBPUSD with a G7 30-pip stop loss, allocate a position size of **$9,000 CAD** (1:1 leverage, 0.9 mini lots). If stopped out, you lose exactly $270 CAD.</li>
+                    </ul>
+                    
+                    <h4>2. Account B ($6,400 USD) - Conviction Account</h4>
+                    <ul>
+                        <li><strong>Allocation focus:</strong> High-beta tech equities (NVDA, COIN) or Crypto (BTC).</li>
+                        <li><strong>Max Risk Unit (1.5%):</strong> $96 USD per trade.</li>
+                        <li><strong>Position Sizing:</strong> If allocating $3,200 USD (50% size) to COIN with a 20% stop loss, your risk is $640 USD (violates the rule). **You must buy a protective put option at 192** for $96 premium. If COIN crashes, your loss is capped at the premium ($96 USD), locking your risk to 1.5%!</li>
+                    </ul>
+
+                    <h4>3. Account C ($2,600 USD) - Volatility Buffer</h4>
+                    <ul>
+                        <li>Keep this account in cash (USD yield) or use it strictly for minor G7 swing setups with tight 20-pip stops (Max risk $39 USD per trade).</li>
+                    </ul>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">Use the calculator in the dashboard tab to automatically compute these lot sizes and risk units!</p>
+                `
+            }
+        ]
     }
-};
+];
 
 // Map simple tickers to TradingView symbols
-function mapTickerToTVSymbol(symbol) {
+function getSymbolForAsset(name) {
+    const nameLower = name.toLowerCase().trim();
     const mappings = {
-        "DXY": "TVC:DXY",
-        "SPX": "SP:SPX",
-        "NDX": "NASDAQ:NDX",
-        "DE30": "FOREXCOM:DE30",
-        "NVDA": "NASDAQ:NVDA",
-        "PLTR": "NYSE:PLTR",
-        "COIN": "NASDAQ:COIN",
-        "MSTR": "NASDAQ:MSTR",
-        "CRCL": "NASDAQ:CRCL",
-        "TSLA": "NASDAQ:TSLA",
-        "AVGO": "NASDAQ:AVGO",
-        "XAUUSD": "OANDA:XAUUSD",
-        "XAGUSD": "OANDA:XAGUSD",
-        "HG1!": "COMEX:HG1!",
-        "LIT": "NYSE:LIT",
-        "BTCUSD": "COINBASE:BTCUSD",
-        "ETHUSD": "COINBASE:ETHUSD",
-        "XRPUSD": "COINBASE:XRPUSD",
-        "SOLUSD": "COINBASE:SOLUSD",
-        "NG1!": "NYMEX:NG1!",
-        "CL1!": "NYMEX:CL1!",
-        "URA": "NYSE:URA",
-        "CT1!": "NYBOT:CT1!",
-        "W1!": "CBOT:W1!",
-        "S1!": "CBOT:S1!"
+        "usdx": "DXY", "spx500": "SPX", "nasdaq": "NDX", "ger30": "DE30",
+        "nvda": "NVDA", "pltr": "PLTR", "coin": "COIN", "mstr": "MSTR",
+        "crcl": "CRCL", "tsla": "TSLA", "avgo": "AVGO", "gold": "XAUUSD",
+        "silver": "XAGUSD", "copper": "HG1!", "lit": "LIT", "bitcoin": "BTCUSD",
+        "eth": "ETHUSD", "xrp": "XRPUSD", "sol": "SOLUSD", "ngas.f": "NG1!",
+        "wti": "CL1!", "ura": "URA", "cotton": "CT1!", "wheat": "W1!", "soyb": "S1!"
     };
-    return mappings[symbol] || symbol;
+    return mappings[nameLower] || name.toUpperCase();
 }
 
 // Group dates into months for sorting and timeline filtering
 function getMonthName(dateKey) {
-    // Expect key like "Mon, Jan 26" or "Tue, Feb 3" or filename "2026-02-05"
     if (dateKey.includes("Jan")) return "January";
     if (dateKey.includes("Feb")) return "February";
     if (dateKey.includes("Mar")) return "March";
@@ -63,7 +316,6 @@ function getMonthName(dateKey) {
     if (dateKey.includes("May")) return "May";
     if (dateKey.includes("Jun")) return "June";
     
-    // Check iso date format
     if (dateKey.includes("-01-")) return "January";
     if (dateKey.includes("-02-")) return "February";
     if (dateKey.includes("-03-")) return "March";
@@ -82,14 +334,11 @@ function getMonthOrder(month) {
 
 // Parse day string to date for chronological sorting
 function getParsedDate(dateKey, fullObj) {
-    // E.g. fullObj.date = "Monday, January 26, 2026"
     if (fullObj && fullObj.date) {
         const clean = fullObj.date.trim();
         const df = new Date(clean);
         if (!isNaN(df.getTime())) return df;
     }
-    // Fallback parsing dateKey
-    // "Mon, Jan 26"
     const parts = dateKey.split(" ");
     if (parts.length >= 3) {
         const monthMap = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5 };
@@ -99,7 +348,7 @@ function getParsedDate(dateKey, fullObj) {
             return new Date(2026, monthIndex, day);
         }
     }
-    return new Date(0); // Epoch fallback
+    return new Date(0);
 }
 
 // Fetch the 106 parsed days from JSON
@@ -119,19 +368,17 @@ async function initApp() {
     }
 
     buildTimelineControls();
+    renderSlide();
 }
 
 // Build months navigation and horizontal days selector
 function buildTimelineControls() {
     const keys = Object.keys(allHistory);
-    
-    // Extract unique months
     const months = new Set();
     keys.forEach(k => months.add(getMonthName(k)));
     
     monthsList = Array.from(months).sort((a, b) => getMonthOrder(a) - getMonthOrder(b));
     
-    // Render Month Tabs
     const monthContainer = document.getElementById("month-filter-container");
     monthContainer.innerHTML = "";
     
@@ -143,7 +390,6 @@ function buildTimelineControls() {
         monthContainer.appendChild(btn);
     });
 
-    // Auto-select first month (or June since it's the latest data)
     if (!activeMonth && monthsList.length > 0) {
         const defaultMonth = monthsList.includes("June") ? "June" : monthsList[0];
         selectMonth(defaultMonth);
@@ -156,7 +402,6 @@ function buildTimelineControls() {
 function selectMonth(month) {
     activeMonth = month;
     
-    // Update Month buttons active status
     document.querySelectorAll(".month-btn").forEach(btn => {
         if (btn.innerText === month) {
             btn.classList.add("active");
@@ -167,7 +412,6 @@ function selectMonth(month) {
 
     renderDaysTimeline();
     
-    // Auto-select the first day of the new month
     const daysInMonth = getDaysOfActiveMonth();
     if (daysInMonth.length > 0) {
         setTimelineDay(daysInMonth[0].key);
@@ -193,7 +437,6 @@ function renderDaysTimeline() {
         btn.className = `timeline-btn ${activeDay === day.key ? 'active' : ''}`;
         btn.onclick = () => setTimelineDay(day.key);
         
-        // Extract day label ("Monday") and short date ("Jan 26")
         let weekday = "Day";
         let datePart = day.key;
         
@@ -213,7 +456,6 @@ function renderDaysTimeline() {
         container.appendChild(btn);
     });
 
-    // Auto-scroll the active button into view
     setTimeout(() => {
         const activeBtn = container.querySelector(".timeline-btn.active");
         if (activeBtn) {
@@ -233,7 +475,6 @@ function renderLedger() {
     document.getElementById("active-date-label").innerText = data.date;
     document.getElementById("active-summary-banner").innerText = data.notes;
 
-    // Filter categories that actually have assets
     const categoriesSorted = ["Currencies", "Stocks/ETF's", "Metals", "Crypto", "Energies", "Commodities"];
     
     categoriesSorted.forEach(groupName => {
@@ -274,20 +515,10 @@ function renderLedger() {
     });
 }
 
-// Resolve visual type based on position description
-function getTypeForPosition(pos) {
-    const lower = pos.toLowerCase();
-    if (lower.contains && lower.contains("short")) return "short";
-    if (lower.includes("short")) return "short";
-    if (lower.includes("hedged") || lower.includes("hedge")) return "hedged";
-    return "long";
-}
-
 // Select an asset to display detail cards and sync charts
 function selectAsset(asset, assetType) {
     selectedAsset = asset;
     
-    // Highlight selected row in DOM
     document.querySelectorAll(".asset-row").forEach(row => {
         if (row.querySelector(".asset-name").innerText.trim() === asset.name) {
             row.classList.add("active");
@@ -306,32 +537,29 @@ function selectAsset(asset, assetType) {
     document.getElementById("stat-size").innerText = asset.size;
     document.getElementById("stat-chng").innerText = asset.chng;
     
-    // Generate intelligent detail reasoning dynamically based on parsed parameters
     const reasonText = getReasoningForAsset(asset, badge.innerText);
     document.getElementById("strategy-reasoning-content").innerText = reasonText;
 
-    // Load TradingView chart
     loadTradingViewChart(getSymbolForAsset(asset.name));
 
-    // Sync Sizing Simulator
-    const sizePct = parseInt(asset.size) || 10;
-    document.getElementById("sim-size-slider").value = sizePct;
-    document.getElementById("sim-size-val").innerText = sizePct + "%";
+    // Sync Sizing Simulator Stop Loss distance if available
+    // E.g. stop/hedge 192 on COIN entry 256.3 is 25% stop distance.
+    const posLower = asset.position.toLowerCase();
+    let detectedDrawdown = 20;
+    if (posLower.includes("stop/hedge") || posLower.includes("hedged")) {
+        // Try to parse values out to calculate drawdown distance
+        const numbers = posLower.match(/\d+(\.\d+)?/g);
+        if (numbers && numbers.length >= 2) {
+            const entryVal = parseFloat(numbers[0]);
+            const stopVal = parseFloat(numbers[1]);
+            if (entryVal > 0 && stopVal > 0) {
+                detectedDrawdown = Math.min(60, Math.max(2, Math.round((Math.abs(entryVal - stopVal) / entryVal) * 100)));
+            }
+        }
+    }
+    document.getElementById("sim-drawdown-slider").value = detectedDrawdown;
+    document.getElementById("sim-drawdown-val").innerText = detectedDrawdown + "%";
     calculateRisk();
-}
-
-// Resolve asset tickers to TradingView symbols
-function getSymbolForAsset(name) {
-    const nameLower = name.toLowerCase().trim();
-    const mappings = {
-        "usdx": "DXY", "spx500": "SPX", "nasdaq": "NDX", "ger30": "DE30",
-        "nvda": "NVDA", "pltr": "PLTR", "coin": "COIN", "mstr": "MSTR",
-        "crcl": "CRCL", "tsla": "TSLA", "avgo": "AVGO", "gold": "XAUUSD",
-        "silver": "XAGUSD", "copper": "HG1!", "lit": "LIT", "bitcoin": "BTCUSD",
-        "eth": "ETHUSD", "xrp": "XRPUSD", "sol": "SOLUSD", "ngas.f": "NG1!",
-        "wti": "CL1!", "ura": "URA", "cotton": "CT1!", "wheat": "W1!", "soyb": "S1!"
-    };
-    return mappings[nameLower] || name.toUpperCase();
 }
 
 // Dynamic text generator for Strategy reasoning box
@@ -339,18 +567,19 @@ function getReasoningForAsset(asset, type) {
     const lowerName = asset.name.toLowerCase();
     const pos = asset.position;
     
+    // G7 Rule correlations:
+    if (lowerName === "usdx" || lowerName === "eurusd" || lowerName === "gbpusd") {
+        return `G7 Swing Trade setup active. Direction decided from Weekly candle trend. Hourly close (Rule 1) and Stochastic oversold status (Rule 2) confirmed entry with a 20-60 pip stop-loss (Rule 6).`;
+    }
     if (type === "short") {
         return `Short trade active on ${asset.name}. Stop/hedge protection is configured in line with macroeconomic resistance levels. Sized at ${asset.size} allocation. Strategy validation holds a bearish bias based on channel structure.`;
     }
-    
     if (type === "hedged") {
         return `Volatility protection active. ${asset.name} is in a defensive hedged structure (${pos}) to isolate tail-risk. This caps absolute capital drawdown during market consolidation phases, preserving liquidity.`;
     }
-    
     if (lowerName === "coin" || lowerName === "mstr") {
         return `Conviction momentum hold. COIN/MSTR represent equitized crypto proxies. Although sized heavily at 100%, the downside is capped with hard contract hedge triggers at technical pivots.`;
     }
-    
     if (lowerName === "gold") {
         if (pos.toLowerCase().includes("long")) {
             return `Gold holds a bullish posture (${pos}) following a breakout confirmation. Short resistance swept; flipped to a long positioning to capture breakout momentum.`;
@@ -358,105 +587,162 @@ function getReasoningForAsset(asset, type) {
             return `Gold range-high short sweeps active. Fully hedged at overhead limits to lock in maximum structural risk limits.`;
         }
     }
-    
     return `Bullish macro trend-following position. stop/hedge levels are moved progressively (SBE) to protect net capital value. Risk sizing is set to a standard ${asset.size}.`;
 }
 
-// Load TradingView chart
-function loadTradingViewChart(symbol) {
-    const container = document.getElementById("tradingview-chart-div");
-    container.innerHTML = "";
+// Switch between dashboard view and course academy view
+function switchView(viewName) {
+    const dashboard = document.getElementById("dashboard-view");
+    const academy = document.getElementById("academy-view");
+    const btnDash = document.getElementById("tab-dashboard");
+    const btnAcad = document.getElementById("tab-academy");
 
-    const mapped = mapTickerToTVSymbol(symbol);
-
-    try {
-        if (typeof TradingView !== 'undefined') {
-            new TradingView.widget({
-                "autosize": true,
-                "symbol": mapped,
-                "interval": "D",
-                "timezone": "Etc/UTC",
-                "theme": "dark",
-                "style": "1",
-                "locale": "en",
-                "toolbar_bg": "#121824",
-                "enable_publishing": false,
-                "hide_side_toolbar": false,
-                "allow_symbol_change": true,
-                "container_id": "tradingview-chart-div"
-            });
-        } else {
-            container.innerHTML = `
-                <div class="tv-placeholder">
-                    <span>Chart Loading offline</span>
-                    <span style="font-size: 0.8rem; color: var(--text-muted);">Symbol: ${mapped}</span>
-                </div>`;
-        }
-    } catch (e) {
-        container.innerHTML = `<div class="tv-placeholder">Chart unavailable: ${symbol}</div>`;
+    if (viewName === "dashboard") {
+        dashboard.style.display = "block";
+        academy.style.display = "none";
+        btnDash.classList.add("active");
+        btnAcad.classList.remove("active");
+    } else {
+        dashboard.style.display = "none";
+        academy.style.display = "block";
+        btnDash.classList.remove("active");
+        btnAcad.classList.add("active");
+        renderSlide();
     }
 }
 
-// Update Active timeline day
-function setTimelineDay(dayKey) {
-    activeDay = dayKey;
+// Course Module Selector
+function selectCourseModule(moduleIdx) {
+    activeModuleIdx = moduleIdx;
+    activeSlideIdx = 0;
     
-    // Highlight timeline button in DOM
-    document.querySelectorAll(".timeline-btn").forEach(btn => {
-        if (btn.querySelector(".date-label").innerText.includes(dayKey.split(" ").slice(1).join(" "))) {
+    document.querySelectorAll(".module-btn").forEach((btn, idx) => {
+        if (idx === moduleIdx) {
             btn.classList.add("active");
         } else {
             btn.classList.remove("active");
         }
     });
 
-    renderLedger();
+    renderSlide();
+}
+
+// Render the active slide details
+function renderSlide() {
+    const mod = courseModules[activeModuleIdx];
+    if (!mod) return;
+    const slide = mod.slides[activeSlideIdx];
+    if (!slide) return;
+
+    document.getElementById("slide-category").innerText = mod.category;
+    document.getElementById("slide-title").innerText = slide.subtitle;
+    document.getElementById("slide-progress").innerText = `Slide ${activeSlideIdx + 1} of ${mod.slides.length}`;
     
-    // Auto-select first asset of the new day
-    const currentData = allHistory[activeDay];
-    if (currentData) {
-        let firstAsset = null;
-        const catOrder = ["Currencies", "Stocks/ETF's", "Metals", "Crypto", "Energies", "Commodities"];
-        for (const cat of catOrder) {
-            const arr = currentData.categories[cat] || [];
-            if (arr.length > 0) {
-                firstAsset = arr[0];
-                break;
-            }
-        }
-        if (firstAsset) {
-            selectAsset(firstAsset, getTypeForPosition(firstAsset.position));
+    document.getElementById("slide-body-content").innerHTML = slide.content;
+
+    // Toggle button visibilities
+    const prevBtn = document.getElementById("slide-prev-btn");
+    const nextBtn = document.getElementById("slide-next-btn");
+
+    if (activeSlideIdx === 0) {
+        prevBtn.style.opacity = "0.5";
+        prevBtn.style.pointerEvents = "none";
+    } else {
+        prevBtn.style.opacity = "1";
+        prevBtn.style.pointerEvents = "auto";
+    }
+
+    if (activeSlideIdx === mod.slides.length - 1) {
+        nextBtn.innerHTML = `Complete Module <i class="fa-solid fa-check"></i>`;
+    } else {
+        nextBtn.innerHTML = `Next Slide <i class="fa-solid fa-arrow-right"></i>`;
+    }
+}
+
+function nextSlide() {
+    const mod = courseModules[activeModuleIdx];
+    if (activeSlideIdx < mod.slides.length - 1) {
+        activeSlideIdx++;
+        renderSlide();
+    } else {
+        // Complete module
+        if (activeModuleIdx < courseModules.length - 1) {
+            alert(`Module "${mod.title}" completed! Moving to next module.`);
+            selectCourseModule(activeModuleIdx + 1);
+        } else {
+            alert("Congratulations! You have completed the entire Strategy & Risk Academy course!");
         }
     }
 }
 
-// Capital Risk & Sizing Calculator
-function calculateRisk() {
-    const portfolioValue = parseFloat(document.getElementById("sim-capital-slider").value);
-    const positionSizePercent = parseFloat(document.getElementById("sim-size-slider").value);
-    const drawdownPercent = parseFloat(document.getElementById("sim-drawdown-slider").value);
+function prevSlide() {
+    if (activeSlideIdx > 0) {
+        activeSlideIdx--;
+        renderSlide();
+    }
+}
 
-    const positionValue = portfolioValue * (positionSizePercent / 100);
-    const unhedgedLoss = positionValue * (drawdownPercent / 100);
+// User-Specific Account Sizing Calculator
+function changeAccountCapital() {
+    const selector = document.getElementById("sim-account-select");
+    const val = selector.value;
+    const capitalSlider = document.getElementById("sim-capital-slider");
+    const capitalLabel = document.getElementById("sim-capital-val");
 
-    // Option premium hedge rules
-    const hedgeCost = positionValue * 0.015; 
-    const hedgeProtectionRatio = 0.70; 
-    
-    let hedgedLoss = unhedgedLoss * (1 - hedgeProtectionRatio) + hedgeCost;
-    if (hedgedLoss > unhedgedLoss) {
-        hedgedLoss = unhedgedLoss + (hedgeCost * 0.2); 
+    let capital = 18000;
+    let labelSuffix = " CAD";
+
+    if (val === "18000_CAD") {
+        capital = 18000;
+        labelSuffix = " CAD";
+    } else if (val === "6400_USD") {
+        capital = 6400;
+        labelSuffix = " USD";
+    } else if (val === "2600_USD") {
+        capital = 2600;
+        labelSuffix = " USD";
+    } else if (val === "22140_USD") {
+        capital = 22140;
+        labelSuffix = " USD";
     }
 
-    const capitalSaved = Math.max(0, unhedgedLoss - hedgedLoss);
+    capitalSlider.value = capital;
+    capitalLabel.innerText = "$" + capital.toLocaleString() + labelSuffix;
+    calculateRisk();
+}
 
-    document.getElementById("sim-capital-val").innerText = "$" + portfolioValue.toLocaleString();
-    document.getElementById("sim-size-val").innerText = positionSizePercent + "%";
-    document.getElementById("sim-drawdown-val").innerText = drawdownPercent + "%";
+function calculateRisk() {
+    const selector = document.getElementById("sim-account-select");
+    const accountVal = selector.value;
+    const isCAD = accountVal.includes("CAD");
+    const currencySuffix = isCAD ? " CAD" : " USD";
 
-    document.getElementById("result-unhedged").innerText = "-$" + Math.round(unhedgedLoss).toLocaleString();
-    document.getElementById("result-hedged").innerText = "-$" + Math.round(hedgedLoss).toLocaleString();
-    document.getElementById("result-saved").innerText = "+$" + Math.round(capitalSaved).toLocaleString();
+    const totalCapital = parseFloat(document.getElementById("sim-capital-slider").value);
+    const riskPercent = parseFloat(document.getElementById("sim-size-slider").value); // slider represents risk % (e.g. 1.5%)
+    const stopDistancePercent = parseFloat(document.getElementById("sim-drawdown-slider").value); // stop drawdown distance (e.g. 25%)
+
+    // Risk Unit = Capital * Risk%
+    const riskUnit = totalCapital * (riskPercent / 100);
+
+    // Recommended position sizing allocation = Risk % / Stop Distance %
+    // E.g. 1.5% Risk / 25% Stop = 6% position sizing allocation
+    const recommendedAllocation = (riskPercent / stopDistancePercent) * 100;
+    const positionValue = totalCapital * (recommendedAllocation / 100);
+
+    // Unhedged loss at stop is exactly equivalent to the risk unit
+    const unhedgedLoss = riskUnit;
+
+    // Hedged loss with 65% protection offset + option cost
+    const hedgeCost = positionValue * 0.015;
+    const hedgedLoss = (unhedgedLoss * 0.35) + hedgeCost;
+
+    document.getElementById("sim-capital-val").innerText = "$" + totalCapital.toLocaleString() + currencySuffix;
+    document.getElementById("sim-size-val").innerText = riskPercent + "%";
+    document.getElementById("sim-drawdown-val").innerText = stopDistancePercent + "%";
+
+    document.getElementById("result-saved").innerText = recommendedAllocation.toFixed(1) + "% allocation ($" + Math.round(positionValue).toLocaleString() + currencySuffix + ")";
+    document.getElementById("result-unhedged").innerText = "-$" + Math.round(unhedgedLoss).toLocaleString() + currencySuffix;
+    document.getElementById("result-hedged").innerText = "-$" + Math.round(hedgedLoss).toLocaleString() + currencySuffix;
 
     const maxLoss = Math.max(unhedgedLoss, hedgedLoss, 1);
     const unhedgedWidth = (unhedgedLoss / maxLoss) * 100;
@@ -466,24 +752,44 @@ function calculateRisk() {
     document.getElementById("bar-hedged").style.width = hedgedWidth + "%";
 }
 
-// Chat AI rules database & Search Engine
-function sendChatMessage() {
-    const input = document.getElementById("chat-input-field");
-    const text = input.value.trim();
-    if (!text) return;
-
-    appendChatMessage(text, "user");
-    input.value = "";
-
-    setTimeout(() => {
-        let reply = getSmartChatResponse(text);
-        appendChatMessage(reply, "ai");
-    }, 600);
-}
-
+// Chat AI Mentor responses database
 function getSmartChatResponse(query) {
     const textLower = query.toLowerCase();
     
+    // Check for G7 Swing System details
+    if (textLower.includes("g7") || textLower.includes("swing system") || textLower.includes("arcisfx")) {
+        return `The G7 Swing Trading system is an indicator-assisted model for Major currency pairs:
+1. **Weekly candle** sets the direction (higher high/low = buy; lower high/low = sell).
+2. **Reversal levels** are placed 10 pips beyond the previous weekly candle's high/low.
+3. **Hourly close (Rule 1)** must touch the 100/200 Bollinger Bands or 200 SMA (Rule 3).
+4. **Stochastic (Rule 2)** must be oversold (<20) or overbought (>80).
+5. **Reversal shape (Rule 5)** (e.g. Hammer, Engulfing) triggers entry at close.
+6. **Stop Loss (Rule 6)** is placed 5-10 pips beyond the candle (20-60 pips max). Target is 2:1 reward/risk.`;
+    }
+
+    // Check for Hedgehog & Risk Lock
+    if (textLower.includes("hedgehog") || textLower.includes("risk lock")) {
+        return `The **Hedgehog strategy** uses opposite counter-contracts (e.g. holding a short leg to neutralize a long setup in drawdowns) rather than taking hard stop-loss slippage.
+The **Risk Lock method** is our trailing protection model: SBE (Stop Breakeven) is activated as soon as price moves 1.5x risk. Hedges are then added in staggered layers (1/3, 1/3, 1/3) to lock profits while letting the core trade run.`;
+    }
+
+    // Check for user's accounts allocation
+    if (textLower.includes("18000") || textLower.includes("cad") || textLower.includes("usd") || textLower.includes("capital allocation") || textLower.includes("my account")) {
+        return `With your portfolio consisting of three accounts ($18,000 CAD, $6,400 USD, and $2,600 USD), you should structure allocations like this:
+1. **$18,000 CAD (Account A):** Allocate to G7 Swing Forex & Index ETFs. Risk Unit (1.5%) = $270 CAD limit per trade. If trading GBPUSD with a 30-pip stop, your position sizing should be $9,000 CAD (0.9 mini lots).
+2. **$6,400 USD (Account B):** Sized for conviction stocks (NVDA, COIN) or Crypto. Risk Unit (1.5%) = $96 USD. If buying COIN, use options hedges (protective puts at 192) to lock max risk to $96.
+3. **$2,600 USD (Account C):** Hold in cash as a volatility/liquidity buffer. Sizing is automated in the dashboard simulator; choose your account from the dropdown to see exact allocation limits.`;
+    }
+
+    // Backtesting & News events
+    if (textLower.includes("news") || textLower.includes("backtest") || textLower.includes("events") || textLower.includes("effective")) {
+        return `Backtesting with news events is highly effective. Veterans do NOT trade *during* CPI or FOMC rate prints because spreads blow out. Instead, they backtest the **post-news drift**:
+- Wait for the event hour rollover (Rule 1).
+- Look for stochastics washes (<20 or >80) at the 200-hour Bollinger Band.
+- Enter only when a reversal candle (e.g., Hammer) is confirmed at the close.
+This allows you to capture news-driven liquidity sweeps while avoiding the initial chaotic spread wicks.`;
+    }
+
     // Core Rules Matching
     if (textLower.includes("rule") || textLower.includes("philosophy") || textLower.includes("risk management")) {
         return `My strategy operates under four strict veteran pillars:
@@ -495,12 +801,12 @@ function getSmartChatResponse(query) {
 
     // Gold flip logic query
     if (textLower.includes("gold") && (textLower.includes("flip") || textLower.includes("reversal") || textLower.includes("long") || textLower.includes("short"))) {
-        return `Looking at the historical data, Gold (XAUUSD) was heavily shorted (up to 75% size) during late January resistance tests. However, on Friday, Jan 30, Gold confirmed a structural breakout above key resistance. In veteran trading, you never fight the momentum breakout. The short positions were closed, and a 10% test Long position was initiated at 4920. This caps trade risk while allowing participation in the new trend.`;
+        return `Gold (XAUUSD) was shorted (60-75% size) during late January resistance sweeps. On Friday, Jan 30, Gold broke out of key structural resistance, triggering an immediate regime-shift. Following G7 reversal rules, shorts were closed and a 10% test Long was opened at 4920. This caps initial risk while participating in the new trend.`;
     }
 
     // COIN/MSTR size queries
     if (textLower.includes("coin") || textLower.includes("mstr") || textLower.includes("100%")) {
-        return `Having a 100% position size in COIN or MSTR is a deliberate leverage play on the crypto ecosystem. However, it is NOT raw buy-and-hold risk. For example, on COIN, a hard contract hedge is locked at 192 (representing a 25% max loss limit on the asset). Since this allocation is walled off, the maximum possible drawdown is mathematically restricted to a defined margin. This allows us to capture high-beta upside while keeping net portfolio equity insulated.`;
+        return `COIN and MSTR are held at 100% sizes as equity proxies. However, they are walled off with protective put options (e.g., COIN hedged at 192). This restricts maximum possible drawdown to a defined 1.5% portfolio risk unit, capturing high-beta upside without exposing the core account to ruin.`;
     }
 
     // Bitcoin staggered hedge queries
@@ -512,26 +818,6 @@ function getSmartChatResponse(query) {
     if (textLower.includes("how many days") || textLower.includes("how many images") || textLower.includes("history size")) {
         const count = Object.keys(allHistory).length;
         return `The portfolio parser has scanned, processed, and loaded a total of **${count} trading days** of ledger history, spanning from January 26, 2026 to June 24, 2026. Select different months in the timeline header to explore his actions across this period.`;
-    }
-
-    // Generic Search: Check if ticker is in database
-    const tickers = ["BTC", "ETH", "SOL", "XRP", "SPX", "NDX", "NVDA", "PLTR", "COIN", "MSTR", "XAUUSD", "XAGUSD", "CL1!"];
-    for (const t of tickers) {
-        if (textLower.includes(t.toLowerCase())) {
-            // Find latest status of ticker
-            const latestKey = Object.keys(allHistory).sort().reverse()[0];
-            const data = allHistory[latestKey];
-            if (data) {
-                let foundPos = null;
-                for (const cat of Object.values(data.categories)) {
-                    const match = cat.find(a => getSymbolForAsset(a.name) === t || a.name.toLowerCase() === t.toLowerCase());
-                    if (match) { foundPos = match; break; }
-                }
-                if (foundPos) {
-                    return `As of the latest parsed ledger (${latestKey}), the position on **${t}** is: **${foundPos.position}** (Size: ${foundPos.size}, changed on ${foundPos.chng}). Dynamic mentor advice: ${getReasoningForAsset(foundPos, getTypeForPosition(foundPos.position))}`;
-                }
-            }
-        }
     }
 
     // Default response
@@ -635,6 +921,10 @@ window.onload = () => {
     document.getElementById("sim-capital-slider").oninput = calculateRisk;
     document.getElementById("sim-size-slider").oninput = calculateRisk;
     document.getElementById("sim-drawdown-slider").oninput = calculateRisk;
+    document.getElementById("sim-account-select").onchange = changeAccountCapital;
+
+    // Trigger initial calculations
+    changeAccountCapital();
 
     // File dropzone events
     const dropzone = document.getElementById("dropzone");

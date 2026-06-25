@@ -102,181 +102,258 @@
         <!-- Main Workspace -->
         <main class="main-content">
             
-            <!-- Timeline Selector -->
-            <section class="timeline-section">
-                <div class="timeline-header">
-                    <span class="timeline-title">Historical Portfolio Timeline (Jan 2026)</span>
-                    <span class="timeline-badge" id="active-date-label">Friday, January 30, 2026</span>
-                </div>
-                
-                <div class="month-filter-bar" id="month-filter-container"></div>
-                
-                <div class="timeline-steps" id="timeline-steps-container">
-                    <!-- Generated dynamically by app.js -->
-                </div>
-            </section>
-
-            <!-- Alert Banner showing current macro overview -->
-            <div class="alert-banner">
-                <span class="alert-dot"></span>
-                <span id="active-summary-banner">System Loaded</span>
+            <!-- Navigation Tabs -->
+            <div class="main-nav-tabs">
+                <button class="nav-tab active" onclick="switchView('dashboard')" id="tab-dashboard">
+                    <i class="fa-solid fa-chart-line"></i> Strategy Dashboard
+                </button>
+                <button class="nav-tab" onclick="switchView('academy')" id="tab-academy">
+                    <i class="fa-solid fa-graduation-cap"></i> Mentor Academy (Course)
+                </button>
             </div>
 
-            <!-- Two Column Grid -->
-            <div class="analysis-workspace">
+            <!-- Dashboard View -->
+            <div id="dashboard-view">
                 
-                <!-- Left Column: Asset Ledger -->
-                <section class="ledger-panel">
-                    <div class="panel-title-row">
-                        <h2 style="font-size: 1.1rem; font-weight: 700;">Asset Portfolio Positions</h2>
-                        <div class="ledger-legend">
-                            <div class="legend-item"><span class="legend-dot long"></span>Long</div>
-                            <div class="legend-item"><span class="legend-dot short"></span>Short</div>
-                            <div class="legend-item"><span class="legend-dot hedged"></span>Hedged</div>
-                        </div>
+                <!-- Timeline Selector -->
+                <section class="timeline-section">
+                    <div class="timeline-header">
+                        <span class="timeline-title">Historical Portfolio Timeline (Jan 2026)</span>
+                        <span class="timeline-badge" id="active-date-label">Friday, January 30, 2026</span>
                     </div>
                     
-                    <!-- Asset Groups container -->
-                    <div id="ledger-groups">
-                        <!-- Filled dynamically by app.js -->
+                    <div class="month-filter-bar" id="month-filter-container"></div>
+                    
+                    <div class="timeline-steps" id="timeline-steps-container">
+                        <!-- Generated dynamically by app.js -->
                     </div>
                 </section>
 
-                <!-- Right Column: Interactive Charts, AI Chat, and Risk Simulator -->
-                <div class="charts-analytics-column">
-                    
-                    <!-- Chart Panel -->
-                    <section class="chart-panel">
-                        <div class="chart-header">
-                            <div class="chart-ticker-info">
-                                <span class="chart-ticker-name" id="selected-asset-name">Bitcoin</span>
-                                <span class="chart-direction-badge long" id="selected-asset-badge">Long</span>
-                            </div>
-                            <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-solid fa-bolt"></i> Live Feed</span>
-                        </div>
-
-                        <!-- TradingView widget container -->
-                        <div class="chart-container-outer">
-                            <div id="tradingview-chart-div"></div>
-                        </div>
-
-                        <!-- Details Grid -->
-                        <div class="details-grid">
-                            <div class="detail-card">
-                                <span class="detail-card-label">Position Details</span>
-                                <span class="detail-card-val" id="stat-position">Long 91200</span>
-                            </div>
-                            <div class="detail-card">
-                                <span class="detail-card-label">Position Sizing</span>
-                                <span class="detail-card-val" id="stat-size">30%</span>
-                            </div>
-                            <div class="detail-card">
-                                <span class="detail-card-label">Last Change</span>
-                                <span class="detail-card-val" id="stat-chng">29 Jan</span>
-                            </div>
-                        </div>
-
-                        <!-- Reasoning Info Box -->
-                        <div class="reasoning-box">
-                            <div class="reasoning-title">
-                                <i class="fa-solid fa-circle-info"></i> AI Mentor Reasoning & Validation
-                            </div>
-                            <div id="strategy-reasoning-content" style="color: var(--text-secondary);">
-                                BTC is hedged using staggered protection orders.
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- Risk Simulator Widget -->
-                    <section class="simulator-panel">
-                        <div class="simulator-title-row">
-                            <h2 style="font-size: 1rem; font-weight: 700;"><i class="fa-solid fa-shield-halved" style="color: var(--color-success)"></i> Capital Preservation Simulator</h2>
-                            <span style="font-size: 0.75rem; color: var(--text-muted);">Unhedged vs. Hedged Strategy</span>
-                        </div>
-                        
-                        <div class="simulator-grid">
-                            <!-- Sliders -->
-                            <div class="simulator-controls">
-                                <div class="control-group">
-                                    <div class="control-label-row">
-                                        <span>Total Portfolio Value</span>
-                                        <span class="control-val" id="sim-capital-val">$100,000</span>
-                                    </div>
-                                    <input type="range" class="slider-input" id="sim-capital-slider" min="10000" max="1000000" step="10000" value="250000">
-                                </div>
-                                <div class="control-group">
-                                    <div class="control-label-row">
-                                        <span>Position Size</span>
-                                        <span class="control-val" id="sim-size-val">30%</span>
-                                    </div>
-                                    <input type="range" class="slider-input" id="sim-size-slider" min="5" max="100" step="5" value="30">
-                                </div>
-                                <div class="control-group">
-                                    <div class="control-label-row">
-                                        <span>Market Drawdown</span>
-                                        <span class="control-val" id="sim-drawdown-val">20%</span>
-                                    </div>
-                                    <input type="range" class="slider-input" id="sim-drawdown-slider" min="5" max="80" step="5" value="25">
-                                </div>
-                            </div>
-
-                            <!-- Results Graphic -->
-                            <div class="simulator-results">
-                                <div class="sim-stat-row">
-                                    <span class="sim-stat-label">Unhedged Strategy Loss:</span>
-                                    <span class="sim-stat-val loss" id="result-unhedged">-$18,750</span>
-                                </div>
-                                <div class="sim-chart-bar-container">
-                                    <div class="sim-chart-bar unhedged" id="bar-unhedged" style="width: 100%"></div>
-                                </div>
-                                
-                                <div class="sim-stat-row">
-                                    <span class="sim-stat-label">Veteran Hedged Strategy Loss:</span>
-                                    <span class="sim-stat-val" style="color: var(--text-primary)" id="result-hedged">-$6,750</span>
-                                </div>
-                                <div class="sim-chart-bar-container">
-                                    <div class="sim-chart-bar hedged" id="bar-hedged" style="width: 36%"></div>
-                                </div>
-                                
-                                <div class="sim-stat-row" style="border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin-top: 0.25rem;">
-                                    <span class="sim-stat-label" style="font-weight: 700; color: var(--color-success)">Capital Saved:</span>
-                                    <span class="sim-stat-val saved" id="result-saved">+$12,000</span>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- Chat with AI Mentor Panel -->
-                    <section class="chat-panel">
-                        <div class="chat-header">
-                            <span class="chat-dot"></span>
-                            <span class="chat-title">Ask AI Mentor About Rules & Strategies</span>
-                        </div>
-                        
-                        <!-- Chat messages -->
-                        <div class="chat-messages" id="chat-messages-container">
-                            <div class="msg ai">
-                                Hello, I've loaded the mentor details from your trading ledger sheets. You can ask me details about the strategy, such as:
-                                <ul style="margin-top: 0.5rem; margin-left: 1.25rem; display: flex; flex-direction: column; gap: 0.35rem;">
-                                    <li><a href="#" style="color: var(--color-primary); text-decoration: none;" onclick="document.getElementById('chat-input-field').value='Why did the mentor flip Gold on Jan 30?'; sendChatMessage(); return false;">"Why did the mentor flip Gold on Jan 30?"</a></li>
-                                    <li><a href="#" style="color: var(--color-primary); text-decoration: none;" onclick="document.getElementById('chat-input-field').value='Explain the 100% position sizing on COIN and MSTR.'; sendChatMessage(); return false;">"Explain the 100% position sizing on COIN and MSTR."</a></li>
-                                    <li><a href="#" style="color: var(--color-primary); text-decoration: none;" onclick="document.getElementById('chat-input-field').value='How are the Bitcoin staggered hedges structured?'; sendChatMessage(); return false;">"How are the Bitcoin staggered hedges structured?"</a></li>
-                                </ul>
-                                <div class="msg-timestamp">Just now</div>
-                            </div>
-                        </div>
-
-                        <!-- Input field -->
-                        <div class="chat-input-row">
-                            <input type="text" class="chat-input" id="chat-input-field" placeholder="Ask a question about the mentor's trading strategy...">
-                            <button class="chat-send-btn" id="chat-send-btn">Send</button>
-                        </div>
-                    </section>
-
+                <!-- Alert Banner showing current macro overview -->
+                <div class="alert-banner">
+                    <span class="alert-dot"></span>
+                    <span id="active-summary-banner">System Loaded</span>
                 </div>
 
+                <!-- Two Column Grid -->
+                <div class="analysis-workspace">
+                    
+                    <!-- Left Column: Asset Ledger -->
+                    <section class="ledger-panel">
+                        <div class="panel-title-row">
+                            <h2 style="font-size: 1.1rem; font-weight: 700;">Asset Portfolio Positions</h2>
+                            <div class="ledger-legend">
+                                <div class="legend-item"><span class="legend-dot long"></span>Long</div>
+                                <div class="legend-item"><span class="legend-dot short"></span>Short</div>
+                                <div class="legend-item"><span class="legend-dot hedged"></span>Hedged</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Asset Groups container -->
+                        <div id="ledger-groups">
+                            <!-- Filled dynamically by app.js -->
+                        </div>
+                    </section>
+
+                    <!-- Right Column: Interactive Charts, AI Chat, and Risk Simulator -->
+                    <div class="charts-analytics-column">
+                        
+                        <!-- Chart Panel -->
+                        <section class="chart-panel">
+                            <div class="chart-header">
+                                <div class="chart-ticker-info">
+                                    <span class="chart-ticker-name" id="selected-asset-name">Bitcoin</span>
+                                    <span class="chart-direction-badge long" id="selected-asset-badge">Long</span>
+                                </div>
+                                <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-solid fa-bolt"></i> Live Feed</span>
+                            </div>
+
+                            <!-- TradingView widget container -->
+                            <div class="chart-container-outer">
+                                <div id="tradingview-chart-div"></div>
+                            </div>
+
+                            <!-- Details Grid -->
+                            <div class="details-grid">
+                                <div class="detail-card">
+                                    <span class="detail-card-label">Position Details</span>
+                                    <span class="detail-card-val" id="stat-position">Long 91200</span>
+                                </div>
+                                <div class="detail-card">
+                                    <span class="detail-card-label">Position Sizing</span>
+                                    <span class="detail-card-val" id="stat-size">30%</span>
+                                </div>
+                                <div class="detail-card">
+                                    <span class="detail-card-label">Last Change</span>
+                                    <span class="detail-card-val" id="stat-chng">29 Jan</span>
+                                </div>
+                            </div>
+
+                            <!-- Reasoning Info Box -->
+                            <div class="reasoning-box">
+                                <div class="reasoning-title">
+                                    <i class="fa-solid fa-circle-info"></i> AI Mentor Reasoning & Validation
+                                </div>
+                                <div id="strategy-reasoning-content" style="color: var(--text-secondary);">
+                                    BTC is hedged using staggered protection orders.
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Risk Simulator Widget -->
+                        <section class="simulator-panel">
+                            <div class="simulator-title-row">
+                                <h2 style="font-size: 1rem; font-weight: 700;"><i class="fa-solid fa-shield-halved" style="color: var(--color-success)"></i> Capital Preservation & Position Planner</h2>
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">Unhedged vs. Hedged Strategy</span>
+                            </div>
+                            
+                            <div class="simulator-grid">
+                                <!-- Sliders -->
+                                <div class="simulator-controls">
+                                    <div class="account-selector-row">
+                                        <span style="font-weight: 600; color: var(--text-secondary);">Select Account Balance</span>
+                                        <select class="calculator-select" id="sim-account-select">
+                                            <option value="18000_CAD" selected>CAD Account ($18,000 CAD)</option>
+                                            <option value="6400_USD">USD Account A ($6,400 USD)</option>
+                                            <option value="2600_USD">USD Account B ($2,600 USD)</option>
+                                            <option value="22140_USD">Combined Portfolio ($22,140 USD Equiv.)</option>
+                                        </select>
+                                    </div>
+                                    <div class="control-group">
+                                        <div class="control-label-row">
+                                            <span>Total Account Capital</span>
+                                            <span class="control-val" id="sim-capital-val">$18,000</span>
+                                        </div>
+                                        <input type="range" class="slider-input" id="sim-capital-slider" min="1000" max="100000" step="500" value="18000">
+                                    </div>
+                                    <div class="control-group">
+                                        <div class="control-label-row">
+                                            <span>Max Trade Risk (1-2% Rule)</span>
+                                            <span class="control-val" id="sim-size-val">1%</span>
+                                        </div>
+                                        <input type="range" class="slider-input" id="sim-size-slider" min="0.5" max="5" step="0.5" value="1.5">
+                                    </div>
+                                    <div class="control-group">
+                                        <div class="control-label-row">
+                                            <span>Stop Distance (Drawdown %)</span>
+                                            <span class="control-val" id="sim-drawdown-val">25%</span>
+                                        </div>
+                                        <input type="range" class="slider-input" id="sim-drawdown-slider" min="2" max="60" step="1" value="25">
+                                    </div>
+                                </div>
+
+                                <!-- Results Graphic -->
+                                <div class="simulator-results">
+                                    <div class="sim-stat-row">
+                                        <span class="sim-stat-label">Maximum Allowed Position Sizing:</span>
+                                        <span class="sim-stat-val saved" style="font-size: 1.15rem;" id="result-saved">6.0% allocation</span>
+                                    </div>
+                                    
+                                    <div class="sim-stat-row" style="border-top: 1px solid var(--border-color); padding-top: 0.5rem; margin-top: 0.25rem;">
+                                        <span class="sim-stat-label">Absolute Risk Unit Limit:</span>
+                                        <span class="sim-stat-val loss" id="result-unhedged">-$270 CAD</span>
+                                    </div>
+                                    <div class="sim-chart-bar-container">
+                                        <div class="sim-chart-bar unhedged" id="bar-unhedged" style="width: 100%"></div>
+                                    </div>
+                                    
+                                    <div class="sim-stat-row">
+                                        <span class="sim-stat-label">Hedge-Capped Loss (With Hedges):</span>
+                                        <span class="sim-stat-val" style="color: var(--color-warning);" id="result-hedged">-$95 CAD</span>
+                                    </div>
+                                    <div class="sim-chart-bar-container">
+                                        <div class="sim-chart-bar hedged" id="bar-hedged" style="width: 35%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Chat with AI Mentor Panel -->
+                        <section class="chat-panel">
+                            <div class="chat-header">
+                                <span class="chat-dot"></span>
+                                <span class="chat-title">Ask AI Mentor About Rules & Strategies</span>
+                            </div>
+                            
+                            <!-- Chat messages -->
+                            <div class="chat-messages" id="chat-messages-container">
+                                <div class="msg ai">
+                                    Hello, I've loaded the mentor details from your trading ledger sheets. You can ask me details about the strategy, such as:
+                                    <ul style="margin-top: 0.5rem; margin-left: 1.25rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                                        <li><a href="#" style="color: var(--color-primary); text-decoration: none;" onclick="document.getElementById('chat-input-field').value='Why did the mentor flip Gold on Jan 30?'; sendChatMessage(); return false;">"Why did the mentor flip Gold on Jan 30?"</a></li>
+                                        <li><a href="#" style="color: var(--color-primary); text-decoration: none;" onclick="document.getElementById('chat-input-field').value='Explain the 100% position sizing on COIN and MSTR.'; sendChatMessage(); return false;">"Explain the 100% position sizing on COIN and MSTR."</a></li>
+                                        <li><a href="#" style="color: var(--color-primary); text-decoration: none;" onclick="document.getElementById('chat-input-field').value='How are the Bitcoin staggered hedges structured?'; sendChatMessage(); return false;">"How are the Bitcoin staggered hedges structured?"</a></li>
+                                    </ul>
+                                    <div class="msg-timestamp">Just now</div>
+                                </div>
+                            </div>
+
+                            <!-- Input field -->
+                            <div class="chat-input-row">
+                                <input type="text" class="chat-input" id="chat-input-field" placeholder="Ask a question about the mentor's trading strategy...">
+                                <button class="chat-send-btn" id="chat-send-btn">Send</button>
+                            </div>
+                        </section>
+
+                    </div>
+
+                </div>
             </div>
-        </main>
+
+            <!-- Academy View (Course) -->
+            <div id="academy-view" style="display: none;">
+                <div class="academy-container">
+                    
+                    <!-- Academy Sidebar -->
+                    <aside class="academy-sidebar">
+                        <div class="module-title-row">
+                            <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-primary);"><i class="fa-solid fa-graduation-cap"></i> Mentor Academy</h3>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">ArcisFX & Grown-Up Rules</span>
+                        </div>
+                        
+                        <div class="module-list">
+                            <button class="module-btn active" onclick="selectCourseModule(0)" id="mod-btn-0">
+                                <span class="module-num">1</span>
+                                <span>Trade Like a Grown-Up</span>
+                            </button>
+                            <button class="module-btn" onclick="selectCourseModule(1)" id="mod-btn-1">
+                                <span class="module-num">2</span>
+                                <span>G7 Swing Trading System</span>
+                            </button>
+                            <button class="module-btn" onclick="selectCourseModule(2)" id="mod-btn-2">
+                                <span class="module-num">3</span>
+                                <span>Backtesting, News & Events</span>
+                            </button>
+                            <button class="module-btn" onclick="selectCourseModule(3)" id="mod-btn-3">
+                                <span class="module-num">4</span>
+                                <span>Hedgehog & Risk Lock</span>
+                            </button>
+                        </div>
+                    </aside>
+
+                    <!-- Academy Main Display Card -->
+                    <div class="course-slide-card">
+                        <div class="slide-header">
+                            <div class="slide-title-group">
+                                <span class="slide-category" id="slide-category">Module 1: Money Management</span>
+                                <span class="slide-title" id="slide-title">Risk Sizing & Surviving the Game</span>
+                            </div>
+                            <span class="slide-progress" id="slide-progress">Slide 1 of 5</span>
+                        </div>
+                        
+                        <!-- Slide Content Body -->
+                        <div class="slide-body" id="slide-body-content">
+                            <!-- Populated dynamically by app.js -->
+                        </div>
+                        
+                        <div class="slide-footer">
+                            <button class="slide-nav-btn" id="slide-prev-btn" onclick="prevSlide()"><i class="fa-solid fa-arrow-left"></i> Previous</button>
+                            <button class="slide-nav-btn primary" id="slide-next-btn" onclick="nextSlide()">Next Slide <i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
     </div>
 
     <!-- OCR Scanner Overlay -->
