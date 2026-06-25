@@ -2,8 +2,7 @@ from flask import Flask, send_from_directory
 import os
 
 app = Flask(__name__, static_folder='.', static_url_path='')
-server = app  # Fallback for gunicorn app:server or similarWSGI calls
-
+server = app  # Fallback for gunicorn server:server or server:app or app:server
 
 @app.route('/')
 def serve_index():
