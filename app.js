@@ -1480,43 +1480,66 @@ function setTimelineDay(dayKey) {
     }
 }
 
-// Bind Events on Page Load
-window.onload = () => {
-    initApp();
+// Bind Events on Page Load (Browser vs Node env check)
+if (typeof window === 'undefined') {
+    // running in Node.js environment (e.g. if started with `node app.js` on hosting services)
+    try {
+        const express = require('express');
+        const path = require('path');
+        const expressApp = express();
+        const PORT = process.env.PORT || 10000;
 
-    document.getElementById("chat-send-btn").onclick = sendChatMessage;
-    document.getElementById("chat-input-field").onkeydown = (e) => {
-        if (e.key === "Enter") sendChatMessage();
+        expressApp.use(express.static(__dirname));
+
+        expressApp.get('*', (req, res) => {
+            res.sendFile(path.join(__dirname, 'index.html'));
+        });
+
+        expressApp.listen(PORT, () => {
+            console.log(`Server successfully running on port ${PORT}`);
+        });
+    } catch (e) {
+        console.error("Failed to start fallback Node Express server inside app.js:", e);
+    }
+} else {
+    // running in Browser environment
+    window.onload = () => {
+        initApp();
+
+        document.getElementById("chat-send-btn").onclick = sendChatMessage;
+        document.getElementById("chat-input-field").onkeydown = (e) => {
+            if (e.key === "Enter") sendChatMessage();
+        };
+
+        document.getElementById("sim-capital-slider").oninput = calculateRisk;
+        document.getElementById("sim-size-slider").oninput = calculateRisk;
+        document.getElementById("sim-drawdown-slider").oninput = calculateRisk;
+        document.getElementById("sim-account-select").onchange = changeAccountCapital;
+
+        changeAccountCapital();
+
+        const dropzone = document.getElementById("dropzone");
+        const fileInput = document.getElementById("file-input");
+
+        dropzone.onclick = () => fileInput.click();
+        fileInput.onchange = handleFileUpload;
+
+        dropzone.ondragover = (e) => {
+            e.preventDefault();
+            dropzone.style.borderColor = "var(--color-primary)";
+            dropzone.style.background = "rgba(59, 130, 246, 0.05)";
+        };
+
+        dropzone.ondragleave = () => {
+            dropzone.style.borderColor = "rgba(59, 130, 246, 0.2)";
+            dropzone.style.background = "rgba(59, 130, 246, 0.02)";
+        };
+
+        dropzone.ondrop = (e) => {
+            e.preventDefault();
+            dropzone.style.borderColor = "rgba(59, 130, 246, 0.2)";
+            dropzone.style.background = "rgba(59, 130, 246, 0.02)";
+            handleFileUpload(e);
+        };
     };
-
-    document.getElementById("sim-capital-slider").oninput = calculateRisk;
-    document.getElementById("sim-size-slider").oninput = calculateRisk;
-    document.getElementById("sim-drawdown-slider").oninput = calculateRisk;
-    document.getElementById("sim-account-select").onchange = changeAccountCapital;
-
-    changeAccountCapital();
-
-    const dropzone = document.getElementById("dropzone");
-    const fileInput = document.getElementById("file-input");
-
-    dropzone.onclick = () => fileInput.click();
-    fileInput.onchange = handleFileUpload;
-
-    dropzone.ondragover = (e) => {
-        e.preventDefault();
-        dropzone.style.borderColor = "var(--color-primary)";
-        dropzone.style.background = "rgba(59, 130, 246, 0.05)";
-    };
-
-    dropzone.ondragleave = () => {
-        dropzone.style.borderColor = "rgba(59, 130, 246, 0.2)";
-        dropzone.style.background = "rgba(59, 130, 246, 0.02)";
-    };
-
-    dropzone.ondrop = (e) => {
-        e.preventDefault();
-        dropzone.style.borderColor = "rgba(59, 130, 246, 0.2)";
-        dropzone.style.background = "rgba(59, 130, 246, 0.02)";
-        handleFileUpload(e);
-    };
-};
+}
