@@ -290,6 +290,64 @@ const courseModules = [
                 `
             }
         ]
+    },
+    {
+        category: "Module 5: Commodity Trading",
+        title: "NATGAS 'Widow Maker' Techniques",
+        slides: [
+            {
+                subtitle: "Natural Gas & Market Drivers",
+                content: `
+                    <p>Natural gas is famously nicknamed the **"Widow Maker"** due to its extreme, unpredictable volatility. It supplies roughly 24% of the energy requirements of developed countries, and is highly sensitive to the following drivers:</p>
+                    <ul>
+                        <li><strong>Supply Factors:</strong> Production levels and monthly **EIA Storage Reports** (which indicate if the market is oversupplied or undersupplied).</li>
+                        <li><strong>Demand Factors:</strong> Industrial, commercial, and residential consumption.</li>
+                        <li><strong>Weather Seasonality:</strong> Highly weather-dependent. Winter cold drives residential heating spikes; Summer heat drives electricity generation (cooling) spikes.</li>
+                        <li><strong>Geopolitics:</strong> Environmental policies, trade regulations, and pipeline politics can immediately cause massive price gaps.</li>
+                    </ul>
+                `
+            },
+            {
+                subtitle: "Trading Instruments: Futures vs. ETFs",
+                content: `
+                    <p>Retail traders have two primary instruments to participate in the Natural Gas market:</p>
+                    <ul>
+                        <li><strong>Futures Contracts (NGAS.F / NG1):</strong> Standardized contracts traded on the NYMEX. Offers "pure" price representation and high leverage, but exposes you to monthly rollover contract costs (contango vs backwardation).</li>
+                        <li><strong>Continuous ETFs (NATGAS):</strong> Simpler access without a futures account, no monthly rollover to manage.</li>
+                    </ul>
+                    <div class="alert-banner" style="background: rgba(239, 68, 68, 0.05); color: var(--color-danger); border-color: rgba(239, 68, 68, 0.15); margin: 0.5rem 0;">
+                        <span class="alert-dot" style="background: var(--color-danger);"></span>
+                        <strong>Warning on BOIL & KOLD:</strong> These are 2x leveraged ETFs designed for daily speculation. Holding them long-term guarantees massive losses due to volatility drag, decay, and compounding errors in choppy markets. <strong>Best left to pros or masochists.</strong>
+                    </div>
+                `
+            },
+            {
+                subtitle: "COT (Commitments of Traders) Analysis",
+                content: `
+                    <p>The Commitments of Traders (COT) report from Barchart.com is a crucial tool to understand institutional sentiment in Natural Gas:</p>
+                    <ul>
+                        <li><strong>Commercials (Producers/Hedgers):</strong> Typically trade against the trend to lock in prices. A net short position indicates they expect lower prices.</li>
+                        <li><strong>Managed Money (Speculators/Hedge Funds):</strong> Speculative trend-followers. Extreme net long or net short positions indicate a market bubble that frequently precedes a major reversal.</li>
+                        <li><strong>Bullish Divergence:</strong> If prices are declining but managed money net shorts begin to reverse and cover, it provides a powerful confirmation signal for a long reversal.</li>
+                    </ul>
+                `
+            },
+            {
+                subtitle: "The Step-by-Step Trade Process",
+                content: `
+                    <p>To swing trade Natural Gas safely, you must follow this daily checklist before taking action:</p>
+                    <ol>
+                        <li><strong>Check COT positioning</strong> on Barchart.com to identify institutional extremes.</li>
+                        <li><strong>Check Weather and Seasonality</strong> via <em>natgasweather.com</em>.</li>
+                        <li><strong>Check News Calendars</strong> on <em>myfxbook.com</em> to identify upcoming macro energy releases.</li>
+                        <li><strong>Check Multi-Timeframe Trends:</strong> Review daily/weekly charts for overall trend, and 4-hour/1-hour charts for entry triggers.</li>
+                        <li><strong>Position Sizing Formula:</strong> Always compute: <br>
+                        <code style="background: rgba(255, 255, 255, 0.05); padding: 0.2rem 0.4rem; border-radius: 4px; display: inline-block; margin-top: 0.25rem;">Size = (Amount at risk per trade) / (Entry Price - Stop Price)</code></li>
+                        <li><strong>Apply Hedging:</strong> If trading futures, be prepared to open counter-contracts or options to offset sudden weather gap risk.</li>
+                    </ol>
+                `
+            }
+        ]
     }
 ];
 
