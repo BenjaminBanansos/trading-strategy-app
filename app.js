@@ -1346,6 +1346,28 @@ function sendChatMessage() {
     }, 600);
 }
 
+function appendChatMessage(text, sender) {
+    const container = document.getElementById("chat-messages-container");
+    if (!container) return;
+
+    // Remove suggestions block if it exists and user sends message
+    const suggestions = container.querySelector(".chat-suggestions");
+    if (suggestions && sender === "user") {
+        suggestions.remove();
+    }
+
+    const msgDiv = document.createElement("div");
+    msgDiv.className = `chat-msg ${sender === 'user' ? 'user-msg' : 'ai-msg'}`;
+    
+    // Simple conversion of linebreaks to <br> for neat formatting
+    msgDiv.innerHTML = text.replace(/\n/g, "<br>");
+    
+    container.appendChild(msgDiv);
+    
+    // Scroll container to bottom
+    container.scrollTop = container.scrollHeight;
+}
+
 // File Upload Handler (simulated parsing)
 function handleFileUpload(e) {
     const files = e.target.files || e.dataTransfer.files;
@@ -1412,6 +1434,83 @@ function injectNewDay(filename) {
     setTimelineDay(displayKey);
     
     appendChatMessage(`I have parsed your uploaded sheet "${filename}". I extracted the assets and plotted them into the timeline as "Parsed Upload". Check the list to see position levels.`, "ai");
+}
+
+// Ticker and Position Helpers
+function getSymbolForAsset(name) {
+    if (!name) return "BTCUSD";
+    const cleanName = name.trim().toUpperCase();
+    const mappings = {
+        "BITCOIN": "BTCUSD",
+        "BTC": "BTCUSD",
+        "ETH": "ETHUSD",
+        "XRP": "XRPUSD",
+        "SOL": "SOLUSD",
+        "GOLD": "XAUUSD",
+        "SILVER": "XAGUSD",
+        "COPPER": "HG1!",
+        "SPX500": "SPX",
+        "NASDAQ": "IXIC",
+        "GER30": "DAX",
+        "MSFT": "MSFT",
+        "NVDA": "NVDA",
+        "PLTR": "PLTR",
+        "COIN": "COIN",
+        "MSTR": "MSTR",
+        "CRCL": "CRCL",
+        "TSLA": "TSLA",
+        "AVGO": "AVGO",
+        "GOOGL": "GOOGL",
+        "NGAS.F": "NG1!",
+        "NATGAS": "NG1!",
+        "WTI": "USOIL",
+        "URA": "URA",
+        "USDX": "DXY",
+        "EURUSD": "EURUSD",
+        "GBPUSD": "GBPUSD"
+    };
+    return mappings[cleanName] || cleanName;
+}
+
+function mapTickerToTVSymbol(symbol) {
+    if (!symbol) return "COINBASE:BTCUSD";
+    const sym = symbol.toUpperCase();
+    const mappings = {
+        "BTCUSD": "COINBASE:BTCUSD",
+        "ETHUSD": "COINBASE:ETHUSD",
+        "XRPUSD": "COINBASE:XRPUSD",
+        "SOLUSD": "COINBASE:SOLUSD",
+        "XAUUSD": "OANDA:XAUUSD",
+        "XAGUSD": "OANDA:XAGUSD",
+        "HG1!": "COMEX:HG1!",
+        "SPX": "SP:SPX",
+        "IXIC": "NASDAQ:IXIC",
+        "DAX": "FOREXCOM:GER30",
+        "MSFT": "NASDAQ:MSFT",
+        "NVDA": "NASDAQ:NVDA",
+        "PLTR": "NYSE:PLTR",
+        "COIN": "NASDAQ:COIN",
+        "MSTR": "NASDAQ:MSTR",
+        "CRCL": "NASDAQ:CRCL",
+        "TSLA": "NASDAQ:TSLA",
+        "AVGO": "NASDAQ:AVGO",
+        "GOOGL": "NASDAQ:GOOGL",
+        "NG1!": "NYMEX:NG1!",
+        "USOIL": "TVC:USOIL",
+        "URA": "NYSE:URA",
+        "DXY": "CAPITALCOM:DXY",
+        "EURUSD": "FX:EURUSD",
+        "GBPUSD": "FX:GBPUSD"
+    };
+    return mappings[sym] || sym;
+}
+
+function getTypeForPosition(posText) {
+    if (!posText) return "long";
+    const text = posText.toLowerCase();
+    if (text.includes("short")) return "short";
+    if (text.includes("hedged") && (text.includes("fully") || text.includes("100%"))) return "hedged";
+    return "long";
 }
 
 // Load TradingView chart
