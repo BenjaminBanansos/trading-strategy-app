@@ -126,11 +126,12 @@ function selectCourseSlide(courseIdx, slideIdx) {
 
     if (page.images && page.images.length > 0) {
         htmlContent += `<div class="slide-images-container" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">`;
-        page.images.forEach(imgUrl => {
+        page.images.forEach((imgUrl, imgIdx) => {
             htmlContent += `
-                <div class="slide-image-wrapper" style="border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; background: rgba(0,0,0,0.2); padding: 0.5rem; display: flex; flex-direction: column; align-items: center;">
+                <div class="slide-image-wrapper" style="border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; background: rgba(0,0,0,0.2); padding: 0.5rem; display: flex; flex-direction: column; align-items: center; width: 100%;">
                     <img src="${imgUrl}" style="max-width: 100%; height: auto; border-radius: 4px;" alt="Page Illustration" onerror="console.warn('Failed to load image:', '${imgUrl}')">
                     <span style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.25rem;"><i class="fa-solid fa-image"></i> Book Illustration</span>
+                    <div id="course-inline-chart-${courseIdx}-${slideIdx}-${imgIdx}" style="width: 100%; height: 220px; margin-top: 1rem;"></div>
                 </div>
             `;
         });
@@ -138,6 +139,9 @@ function selectCourseSlide(courseIdx, slideIdx) {
     }
 
     document.getElementById(`c${courseIdx + 1}-text-panel`).innerHTML = htmlContent;
+
+    // Trigger inline SVG chart generation for any images
+    renderCourseInlineChart(courseIdx, slideIdx, page);
 
     // Trigger visualizer
     updateCourseVisualizer(courseIdx, slideIdx, page);
@@ -2466,4 +2470,77 @@ function drawJournal4HChart(chartSetup) {
     
     svgContent += `</svg>`;
     container.innerHTML = svgContent;
+}
+
+function renderCourseInlineChart(courseIdx, slideIdx, page) {
+    if (!page.images || page.images.length === 0) return;
+    
+    setTimeout(() => {
+        page.images.forEach((imgUrl, imgIdx) => {
+            const container = document.getElementById(`course-inline-chart-${courseIdx}-${slideIdx}-${imgIdx}`);
+            if (!container) return;
+            
+            const width = container.clientWidth || 500;
+            const height = 220;
+            
+            let svgContent = `<svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" style="background: #090d13; font-family: sans-serif; border-radius: 6px; border: 1px solid var(--border-color); margin-top: 0.5rem;">`;
+            
+            for (let i = 1; i < 4; i++) {
+                const yPos = (height / 4) * i;
+                svgContent += `<line x1="10" y1="${yPos}" x2="${width - 10}" y2="${yPos}" stroke="#161b22" stroke-dasharray="2,2" />`;
+            }
+            
+            if (courseIdx === 1) { // Course 2: G7 Swing Forex
+                svgContent += `
+                    <path d="M 10 70 Q 150 40, 300 90 T ${width-10} 60 L ${width-10} 170 Q 300 200, 150 140 T 10 160 Z" fill="rgba(56, 139, 253, 0.04)" />
+                    <path d="M 10 70 Q 150 40, 300 90 T ${width-10} 60" fill="none" stroke="var(--primary-color)" stroke-width="1.2" stroke-dasharray="2,2" opacity="0.4" />
+                    <path d="M 10 160 Q 150 140, 300 200 T ${width-10} 170" fill="none" stroke="var(--primary-color)" stroke-width="1.2" stroke-dasharray="2,2" opacity="0.4" />
+                    
+                    <path d="M 20 80 L 100 130 L 180 165 L 260 110 L 340 70" fill="none" stroke="#8b949e" stroke-width="1.5" />
+                    
+                    <circle cx="180" cy="165" r="10" fill="none" stroke="var(--color-success)" stroke-width="1.5" />
+                    <path d="M 180 180 L 180 155 M 175 162 L 180 155 L 185 162" fill="none" stroke="var(--color-success)" stroke-width="2" />
+                    <text x="200" y="170" fill="var(--color-success)" font-size="9" font-weight="600">G7 Reversal Re-entry (GBPUSD/Gold)</text>
+                    
+                    <line x1="180" y1="110" x2="${width-10}" y2="110" stroke="var(--color-success)" stroke-dasharray="3,3" />
+                    <text x="200" y="105" fill="var(--color-success)" font-size="8">SBE Profit Lock (1.5R target reached)</text>
+                `;
+            } else if (courseIdx === 2) { // Course 3: NATGAS Widow Maker
+                svgContent += `
+                    <line x1="10" y1="150" x2="${width-10}" y2="150" stroke="#f0883e" stroke-width="1.5" />
+                    <text x="15" y="142" fill="#f0883e" font-size="8">Key Support Level: 2.575</text>
+                    
+                    <line x1="100" y1="110" x2="100" y2="160" stroke="#ff7b72" stroke-width="1.2" />
+                    <rect x="95" y="110" width="10" height="15" fill="#ff7b72" rx="1" />
+                    
+                    <line x1="140" y1="120" x2="140" y2="163" stroke="#ff7b72" stroke-width="1.2" />
+                    <rect x="135" y="120" width="10" height="10" fill="#ff7b72" rx="1" />
+                    
+                    <line x1="180" y1="110" x2="180" y2="165" stroke="var(--color-success)" stroke-width="1.2" />
+                    <rect x="175" y="110" width="10" height="10" fill="var(--color-success)" rx="1" />
+                    
+                    <circle cx="140" cy="150" r="8" fill="none" stroke="#d29922" />
+                    <circle cx="180" cy="150" r="8" fill="none" stroke="#d29922" />
+                    <text x="200" y="154" fill="#d29922" font-size="9" font-weight="600">Triple Wick Rejection (NATGAS 2.575 Bottom)</text>
+                    
+                    <path d="M 180 120 C 230 100, 280 70, 360 40" fill="none" stroke="var(--color-success)" stroke-width="2" />
+                    <text x="370" y="44" fill="var(--color-success)" font-size="8" font-weight="600">Fully Hedged Target (2.91)</text>
+                `;
+            } else { // Course 1: Grown-Up Rules
+                svgContent += `
+                    <line x1="10" y1="100" x2="${width-10}" y2="100" stroke="var(--primary-color)" stroke-width="1.5" />
+                    <text x="15" y="92" fill="var(--primary-color)" font-size="8" font-weight="600">MSTR Core Entry: 235.00</text>
+                    
+                    <line x1="10" y1="160" x2="${width-10}" y2="160" stroke="#ff7b72" stroke-width="1.5" />
+                    <text x="15" y="152" fill="#ff7b72" font-size="8" font-weight="600">Protective Put Floor (Collar Strike at 200.00)</text>
+                    
+                    <path d="M 30 100 Q 150 110, 240 70 T ${width-40} 40" fill="none" stroke="var(--color-success)" stroke-width="2" />
+                    <text x="${width-120}" y="34" fill="var(--color-success)" font-size="8" font-weight="600">Closed Target: 450.00 (Free Collar Option)</text>
+                `;
+            }
+            
+            svgContent += `</svg>`;
+            container.innerHTML = svgContent;
+        });
+    }, 50);
 }
