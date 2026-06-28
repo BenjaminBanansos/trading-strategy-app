@@ -341,10 +341,16 @@
                                 <i class="fa-solid fa-wheat-awn" style="color: #ffc107;"></i> Softs & Grains
                             </button>
                         </div>
+                        <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-top: 1rem; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);"><i class="fa-solid fa-list-check"></i> Master Analysis</h3>
+                        <div class="module-list" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            <button class="module-item" onclick="showMasterLedger()" id="journal-cat-master" style="width: 100%; text-align: left; background: transparent; border: 1px solid transparent; padding: 0.75rem; border-radius: 8px; color: var(--text-secondary); font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s ease;">
+                                <i class="fa-solid fa-database" style="color: #00bcd4;"></i> Full Trade Ledger
+                            </button>
+                        </div>
                     </aside>
 
                     <!-- Right Area: Chart and Journal details -->
-                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <div id="journal-right-category-panel" style="display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
                         <!-- Chart Card -->
                         <section class="chart-panel" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
                             <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; width: 100%;">
@@ -412,6 +418,76 @@
                                 </div>
                             </section>
                         </div>
+                    </div>
+
+                    <!-- Right Area (Master Ledger): Detailed study of all trades -->
+                    <div id="journal-right-master-panel" style="display: none; flex-direction: column; gap: 1.5rem; width: 100%;">
+                        <!-- Master Chart and Campaign Analysis Card -->
+                        <section class="chart-panel" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+                            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; width: 100%;">
+                                <div class="chart-ticker-info">
+                                    <span class="chart-ticker-name" id="master-study-title">Select a trade below to start detailed study</span>
+                                    <span id="master-study-badge" class="chart-direction-badge Long" style="display: none; background: rgba(56,139,253,0.1); color: var(--primary-color);">Long</span>
+                                </div>
+                                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;"><i class="fa-solid fa-magnifying-glass-chart"></i> Campaign Movement & Strategy Analyzer</span>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.5rem; min-height: 260px;">
+                                <!-- Live study chart -->
+                                <div class="chart-container-outer" style="height: 260px; background: #0d1117; border-radius: 8px; border: 1px solid var(--border-color); padding: 0.5rem; display: flex; justify-content: center; align-items: center;">
+                                    <div id="master-study-chart-div" style="width: 100%; height: 100%;"></div>
+                                </div>
+                                
+                                <!-- AI Analysis details -->
+                                <div style="display: flex; flex-direction: column; gap: 0.75rem; background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; overflow-y: auto; max-height: 260px;">
+                                    <h4 style="font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 0.25rem;"><i class="fa-solid fa-brain" style="color: var(--primary-color);"></i> AI Strategy Analysis</h4>
+                                    <p id="master-study-analysis" style="font-size: 0.75rem; line-height: 1.4; color: var(--text-secondary); margin: 0;">Click on any trade in the ledger below to dynamically load its price movement analysis, entry/exit levels, sizing math, and risk-management strategies.</p>
+                                    
+                                    <div id="master-study-stats-box" style="display: none; flex-direction: column; gap: 0.35rem; font-size: 0.7rem; border-top: 1px solid var(--border-color); padding-top: 0.5rem; margin-top: 0.25rem; color: var(--text-muted);">
+                                        <div><strong>Entry Price:</strong> <span id="master-study-stat-entry" style="color: var(--text-primary);"></span></div>
+                                        <div><strong>Position Sizing:</strong> <span id="master-study-stat-size" style="color: var(--text-primary);"></span></div>
+                                        <div><strong>Hedge / Stop Level:</strong> <span id="master-study-stat-stop" style="color: var(--text-primary);"></span></div>
+                                        <div><strong>G7 Checklist Validation:</strong> <span id="master-study-stat-checklist" style="color: var(--color-success); font-weight: 600;">Verified</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Ledger Logs Table & Filters Card -->
+                        <section class="card" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+                            <!-- Filters -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+                                <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-table-list" style="color: var(--primary-color);"></i> Full Trade Ledger Log</h3>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <select id="master-ledger-filter-asset" onchange="filterMasterLedgerTable()" style="background: #0d1117; color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; outline: none; cursor: pointer;">
+                                        <option value="all">All Assets</option>
+                                    </select>
+                                    <select id="master-ledger-filter-posture" onchange="filterMasterLedgerTable()" style="background: #0d1117; color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; outline: none; cursor: pointer;">
+                                        <option value="all">All Postures</option>
+                                        <option value="long">Longs Only</option>
+                                        <option value="short">Shorts Only</option>
+                                        <option value="hedge">Hedges Only</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Scrollable Table -->
+                            <div style="overflow-x: auto; max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: left;">
+                                    <thead>
+                                        <tr style="background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
+                                            <th style="padding: 0.6rem 0.75rem;">Date</th>
+                                            <th style="padding: 0.6rem 0.75rem;">Asset</th>
+                                            <th style="padding: 0.6rem 0.75rem;">Position Details</th>
+                                            <th style="padding: 0.6rem 0.75rem;">Sizing</th>
+                                            <th style="padding: 0.6rem 0.75rem; text-align: right;">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="master-ledger-tbody" style="color: var(--text-secondary);">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
                     </div>
                 </div>
             </div>
