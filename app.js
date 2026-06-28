@@ -3343,6 +3343,7 @@ function drawSimulatedPositionChart(asset, type, entry, stop, target) {
 
     // 1. Gather historical data from allHistory
     const prices = [];
+    const dates = [];
     const keys = Object.keys(allHistory).reverse(); // chronological order
     keys.forEach(k => {
         const day = allHistory[k];
@@ -3352,6 +3353,7 @@ function drawSimulatedPositionChart(asset, type, entry, stop, target) {
                     const price = extractPriceFromPosition(a.position);
                     if (price) {
                         prices.push(price);
+                        dates.push(k);
                     }
                 }
             });
@@ -3371,98 +3373,146 @@ function drawSimulatedPositionChart(asset, type, entry, stop, target) {
         
         for (let i = 0; i < 15; i++) {
             prices.push(startVal + (Math.sin(i * 0.8) * trend * 3) + (i * trend));
+            dates.push(`Day ${i+1}`);
         }
     }
 
-    // 3. SVG Coordinates & Canvas Settings
-    const width = container.clientWidth || 600;
-    const height = 260;
-    const paddingLeft = 65;
-    const paddingRight = 135;
-    const paddingTop = 40;
-    const paddingBottom = 40;
+    // 3. Define Plotly data traces
+    const priceTrace = {
+        x: dates,
+        y: prices,
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: `${asset} Price`,
+        line: {
+            color: '#00bcd4',
+            width: 2.5
+        },
+        marker: {
+            color: '#00bcd4',
+            size: 5
+        },
+        fill: 'tozeroy',
+        fillcolor: 'rgba(0, 188, 212, 0.02)'
+    };
 
-    const allVals = prices.concat([entry, stop, target]);
-    const minVal = Math.min(...allVals) * 0.98;
-    const maxVal = Math.max(...allVals) * 1.02;
+    // Layout settings for dark, clean theme mimicking TradingView
+    const layout = {
+        plot_bgcolor: '#0d1117',
+        paper_bgcolor: '#0d1117',
+        font: {
+            color: '#8b949e',
+            family: 'Inter, sans-serif',
+            size: 10
+        },
+        margin: { t: 25, b: 35, l: 50, r: 120 },
+        showlegend: false,
+        xaxis: {
+            showgrid: true,
+            gridcolor: 'rgba(255, 255, 255, 0.03)',
+            linecolor: 'rgba(255, 255, 255, 0.08)',
+            zeroline: false
+        },
+        yaxis: {
+            showgrid: true,
+            gridcolor: 'rgba(255, 255, 255, 0.03)',
+            linecolor: 'rgba(255, 255, 255, 0.08)',
+            zeroline: false,
+            tickformat: asset.toLowerCase().includes("gas") ? '.3f' : '.2f'
+        },
+        shapes: [
+            // Red Risk zone
+            {
+                type: 'rect',
+                xref: 'paper',
+                x0: 0,
+                x1: 1,
+                yref: 'y',
+                y0: stop,
+                y1: entry,
+                fillcolor: 'rgba(239, 68, 68, 0.1)',
+                line: { width: 0 }
+            },
+            // Green Reward zone
+            {
+                type: 'rect',
+                xref: 'paper',
+                x0: 0,
+                x1: 1,
+                yref: 'y',
+                y0: entry,
+                y1: target,
+                fillcolor: 'rgba(86, 211, 100, 0.1)',
+                line: { width: 0 }
+            },
+            // Entry line
+            {
+                type: 'line',
+                xref: 'paper',
+                x0: 0,
+                x1: 1,
+                yref: 'y',
+                y0: entry,
+                y1: entry,
+                line: { color: '#00bcd4', width: 1.5, dash: 'dash' }
+            },
+            // Stop Loss line
+            {
+                type: 'line',
+                xref: 'paper',
+                x0: 0,
+                x1: 1,
+                yref: 'y',
+                y0: stop,
+                y1: stop,
+                line: { color: '#ff7b72', width: 1.5, dash: 'dash' }
+            },
+            // Target line
+            {
+                type: 'line',
+                xref: 'paper',
+                x0: 0,
+                x1: 1,
+                yref: 'y',
+                y0: target,
+                y1: target,
+                line: { color: '#56d364', width: 1.5, dash: 'dash' }
+            }
+        ],
+        annotations: [
+            {
+                xref: 'paper',
+                x: 1.01,
+                yref: 'y',
+                y: entry,
+                text: `ENTRY: $${entry.toFixed(entry < 10 ? 3 : 2)}`,
+                showarrow: false,
+                font: { color: '#00bcd4', size: 10, weight: 'bold' },
+                xanchor: 'left'
+            },
+            {
+                xref: 'paper',
+                x: 1.01,
+                yref: 'y',
+                y: stop,
+                text: `STOP: $${stop.toFixed(stop < 10 ? 3 : 2)}`,
+                showarrow: false,
+                font: { color: '#ff7b72', size: 10, weight: 'bold' },
+                xanchor: 'left'
+            },
+            {
+                xref: 'paper',
+                x: 1.01,
+                yref: 'y',
+                y: target,
+                text: `TARGET (2.5R): $${target.toFixed(target < 10 ? 3 : 2)}`,
+                showarrow: false,
+                font: { color: '#56d364', size: 10, weight: 'bold' },
+                xanchor: 'left'
+            }
+        ]
+    };
 
-    const getX = (i) => paddingLeft + (i / (prices.length - 1)) * (width - paddingLeft - paddingRight);
-    const getY = (val) => height - paddingBottom - ((val - minVal) / (maxVal - minVal)) * (height - paddingTop - paddingBottom);
-
-    // 4. Generate SVG elements
-    let svgContent = `<svg width="100%" height="${height}" style="background: #0d1117; display: block; overflow: visible;">`;
-    
-    // Draw horizontal reference lines (grid)
-    for (let i = 0; i <= 4; i++) {
-        const val = minVal + (i / 4) * (maxVal - minVal);
-        const y = getY(val);
-        svgContent += `
-            <line x1="${paddingLeft}" y1="${y}" x2="${width - paddingRight}" y2="${y}" stroke="rgba(255,255,255,0.03)" stroke-width="1" />
-            <text x="${paddingLeft - 10}" y="${y + 4}" fill="var(--text-muted)" font-size="9" text-anchor="end" font-family="monospace">$${val.toFixed(val < 10 ? 3 : 1)}</text>
-        `;
-    }
-
-    // Draw Shading Zones
-    const entryY = getY(entry);
-    const stopY = getY(stop);
-    const targetY = getY(target);
-
-    // Risk Zone (Red shading)
-    const riskYStart = Math.min(entryY, stopY);
-    const riskHeight = Math.abs(entryY - stopY);
-    svgContent += `
-        <rect x="${paddingLeft}" y="${riskYStart}" width="${width - paddingLeft - paddingRight}" height="${riskHeight}" fill="rgba(239, 68, 68, 0.1)" />
-    `;
-
-    // Reward Zone (Green shading)
-    const rewardYStart = Math.min(entryY, targetY);
-    const rewardHeight = Math.abs(entryY - targetY);
-    svgContent += `
-        <rect x="${paddingLeft}" y="${rewardYStart}" width="${width - paddingLeft - paddingRight}" height="${rewardHeight}" fill="rgba(86, 211, 100, 0.1)" />
-    `;
-
-    // Draw Neon Price Line
-    let pathD = "";
-    prices.forEach((p, idx) => {
-        const x = getX(idx);
-        const y = getY(p);
-        if (idx === 0) pathD = `M ${x} ${y}`;
-        else pathD += ` L ${x} ${y}`;
-    });
-
-    svgContent += `
-        <path d="${pathD}" fill="none" stroke="rgba(0, 188, 212, 0.4)" stroke-width="2.5" />
-    `;
-
-    // Draw Simulated entry / stop / target horizontal dashed lines
-    // Entry price line
-    svgContent += `
-        <line x1="${paddingLeft}" y1="${entryY}" x2="${width - paddingRight}" y2="${entryY}" stroke="#00bcd4" stroke-width="1.5" stroke-dasharray="4,4" />
-        <text x="${width - paddingRight + 6}" y="${entryY + 4}" fill="#00bcd4" font-size="10" font-weight="bold" font-family="monospace">ENTRY: $${entry.toFixed(entry < 10 ? 3 : 1)}</text>
-    `;
-
-    // Stop Loss price line
-    svgContent += `
-        <line x1="${paddingLeft}" y1="${stopY}" x2="${width - paddingRight}" y2="${stopY}" stroke="#ff7b72" stroke-width="1.5" stroke-dasharray="4,4" />
-        <text x="${width - paddingRight + 6}" y="${stopY + 4}" fill="#ff7b72" font-size="10" font-weight="bold" font-family="monospace">STOP LOSS: $${stop.toFixed(stop < 10 ? 3 : 1)}</text>
-    `;
-
-    // Target price line
-    svgContent += `
-        <line x1="${paddingLeft}" y1="${targetY}" x2="${width - paddingRight}" y2="${targetY}" stroke="#56d364" stroke-width="1.5" stroke-dasharray="4,4" />
-        <text x="${width - paddingRight + 6}" y="${targetY + 4}" fill="#56d364" font-size="10" font-weight="bold" font-family="monospace">TARGET (2.5R): $${target.toFixed(target < 10 ? 3 : 1)}</text>
-    `;
-
-    // Draw pulse marker on last point of the historical line
-    const lastX = getX(prices.length - 1);
-    const lastY = getY(prices[prices.length - 1]);
-    svgContent += `
-        <circle cx="${lastX}" cy="${lastY}" r="4" fill="var(--primary-color)" />
-        <circle cx="${lastX}" cy="${lastY}" r="12" fill="var(--primary-color)" fill-opacity="0.15">
-            <animate attributeName="r" values="4;14;4" dur="2s" repeatCount="indefinite" />
-        </circle>
-    `;
-
-    svgContent += `</svg>`;
-    container.innerHTML = svgContent;
+    // Render using Plotly.js
+    Plotly.newPlot(container, [priceTrace], layout, { responsive: true, displayModeBar: false });
 }
