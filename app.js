@@ -1749,42 +1749,53 @@ function updateChartDisplay() {
     if (!selectedAsset) return;
     
     if (chartMode === 'live') {
-        loadTradingViewChart(getSymbolForAsset(selectedAsset.name));
+        loadTradingViewChart(getSymbolForAsset(selectedAsset.name), selectedAsset.name);
     } else {
         renderLedgerHistoryChart(selectedAsset.name);
     }
 }
 
-// Load TradingView chart
-function loadTradingViewChart(symbol) {
+// Load TradingView chart with custom layout overlay
+function loadTradingViewChart(symbol, assetName) {
     const container = document.getElementById("tradingview-chart-div");
     container.innerHTML = "";
 
     const mapped = mapTickerToTVSymbol(symbol);
+    
+    // Map active asset to corresponding TradingView Layout ID
+    let layoutKey = "";
+    const nameLower = assetName.toLowerCase();
+    
+    if (nameLower.includes("gold") || nameLower.includes("silver") || nameLower.includes("copper") || nameLower.includes("ura") || nameLower.includes("lit")) {
+        layoutKey = "bFnbnA5G";
+    } else if (nameLower.includes("gbpusd") || nameLower.includes("eurusd") || nameLower.includes("usdzar") || nameLower.includes("dxy") || nameLower.includes("usdx")) {
+        layoutKey = "VxjU5i37";
+    } else if (nameLower.includes("nasdaq") || nameLower.includes("spx") || nameLower.includes("ger30") || nameLower.includes("ger40") || nameLower.includes("dax")) {
+        layoutKey = "3HVy3P4P";
+    } else if (nameLower.includes("bitcoin") || nameLower.includes("btc") || nameLower.includes("eth") || nameLower.includes("sol") || nameLower.includes("xrp")) {
+        layoutKey = "4YcTkeFE";
+    } else if (nameLower.includes("gas") || nameLower.includes("natgas") || nameLower.includes("ngas") || nameLower.includes("wti") || nameLower.includes("oil")) {
+        layoutKey = "7IIPnrJQ";
+    } else if (nameLower.includes("wheat") || nameLower.includes("cocoa") || nameLower.includes("cotton") || nameLower.includes("soyb")) {
+        layoutKey = "B6gleUYJ";
+    } else {
+        layoutKey = "1R3q21aM";
+    }
 
     try {
-        if (typeof TradingView !== 'undefined') {
-            new TradingView.widget({
-                "autosize": true,
-                "symbol": mapped,
-                "interval": "D",
-                "timezone": "Etc/UTC",
-                "theme": "dark",
-                "style": "1",
-                "locale": "en",
-                "toolbar_bg": "#121824",
-                "enable_publishing": false,
-                "hide_side_toolbar": false,
-                "allow_symbol_change": true,
-                "container_id": "tradingview-chart-div"
-            });
-        } else {
-            container.innerHTML = `
-                <div class="tv-placeholder">
-                    <span>Chart Loading offline</span>
-                    <span style="font-size: 0.8rem; color: var(--text-muted);">Symbol: ${mapped}</span>
-                </div>`;
-        }
+        container.innerHTML = `
+            <iframe 
+                src="https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(mapped)}&theme=dark&style=1&timezone=Etc%2FUTC&layout=${layoutKey}&locale=en" 
+                style="width: 100%; height: 100%; border: none; background: #0d1117;"
+                allowfullscreen>
+            </iframe>
+            <!-- Open Layout Link Badge -->
+            <div style="position: absolute; bottom: 8px; right: 8px; z-index: 10; background: rgba(13, 17, 23, 0.85); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 4px;">
+                <a href="https://www.tradingview.com/chart/${layoutKey}/" target="_blank" style="color: #00bcd4; font-size: 0.7rem; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-up-right-from-square"></i> Open Layout
+                </a>
+            </div>
+        `;
     } catch (e) {
         container.innerHTML = `<div class="tv-placeholder">Chart unavailable: ${symbol}</div>`;
     }
