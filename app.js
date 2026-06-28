@@ -3200,7 +3200,7 @@ function validateBuySellSetup() {
     sizingMultSpan.innerText = `${proposedMultiplier}x`;
     rrRatioSpan.innerText = `${defaultRR.toFixed(2)}:1`;
 
-    // 1. Audit Checklists (ArcisFX Risk Checklist.pdf)
+    // 1. Audit Checklists (BenFX Risk Checklist.pdf)
     const maxRiskLimit = capital * 0.015; // 1.5% max risk
     const passesRiskLimit = riskAmountUSD <= maxRiskLimit;
 
@@ -3210,10 +3210,10 @@ function validateBuySellSetup() {
 
     let auditHtml = "";
     if (passesRiskLimit) {
-        auditHtml += `<li style="color: var(--color-success);"><i class="fa-solid fa-check"></i> ArcisFX 1.5% Risk Rule: PASS (Total capital at risk of $${riskAmountUSD.toFixed(2)} is within the max allowed limit of $${maxRiskLimit.toFixed(2)}).</li>`;
+        auditHtml += `<li style="color: var(--color-success);"><i class="fa-solid fa-check"></i> BenFX 1.5% Risk Rule: PASS (Total capital at risk of $${riskAmountUSD.toFixed(2)} is within the max allowed limit of $${maxRiskLimit.toFixed(2)}).</li>`;
     } else {
         const recommendedSize = ((maxRiskLimit / (capital * riskPercent)) * 100).toFixed(1);
-        auditHtml += `<li style="color: #ff7b72;"><i class="fa-solid fa-xmark"></i> ArcisFX 1.5% Risk Rule: FAIL (Risk amount of $${riskAmountUSD.toFixed(2)} exceeds the $${maxRiskLimit.toFixed(2)} ceiling). Action: Reduce sizing to <strong>${recommendedSize}%</strong> to comply.</li>`;
+        auditHtml += `<li style="color: #ff7b72;"><i class="fa-solid fa-xmark"></i> BenFX 1.5% Risk Rule: FAIL (Risk amount of $${riskAmountUSD.toFixed(2)} exceeds the $${maxRiskLimit.toFixed(2)} ceiling). Action: Reduce sizing to <strong>${recommendedSize}%</strong> to comply.</li>`;
     }
 
     auditHtml += `<li><i class="fa-solid fa-circle-info"></i> Invalidation Level: Defined clearly at $${stop.toFixed(2)} ("Stop placed at invalidation, not emotion" - Risk Checklist).</li>`;
@@ -3259,7 +3259,7 @@ function validateBuySellSetup() {
     let memsHtml = "";
     const isHedgeTrade = type === "hedge";
     
-    memsHtml += `<div><strong>ArcisFX Risk Checklist:</strong> "Never widen the stop after entry; exit or reduce size over 'hoping' if conditions change."</div>`;
+    memsHtml += `<div><strong>BenFX Risk Checklist:</strong> "Never widen the stop after entry; exit or reduce size over 'hoping' if conditions change."</div>`;
     
     if (isHedgeTrade || ["NGAS.F", "Gold", "WTI"].includes(asset)) {
         memsHtml += `<div><strong>James' Hedging Rule:</strong> "Hedge when price stalls in profit or volatility spikes. Open opposite leg, set stops on both, let the winning leg run."</div>`;
