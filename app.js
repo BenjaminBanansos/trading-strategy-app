@@ -123,6 +123,20 @@ function selectCourseSlide(courseIdx, slideIdx) {
     } else {
         htmlContent = `<p>${page.raw_text}</p>`;
     }
+
+    if (page.images && page.images.length > 0) {
+        htmlContent += `<div class="slide-images-container" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">`;
+        page.images.forEach(imgUrl => {
+            htmlContent += `
+                <div class="slide-image-wrapper" style="border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; background: rgba(0,0,0,0.2); padding: 0.5rem; display: flex; flex-direction: column; align-items: center;">
+                    <img src="${imgUrl}" style="max-width: 100%; height: auto; border-radius: 4px;" alt="Page Illustration" onerror="console.warn('Failed to load image:', '${imgUrl}')">
+                    <span style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.25rem;"><i class="fa-solid fa-image"></i> Book Illustration</span>
+                </div>
+            `;
+        });
+        htmlContent += `</div>`;
+    }
+
     document.getElementById(`c${courseIdx + 1}-text-panel`).innerHTML = htmlContent;
 
     // Trigger visualizer
@@ -1267,69 +1281,244 @@ function calculateRisk() {
     document.getElementById("bar-hedged").style.width = hedgedWidth + "%";
 }
 
+// Chat AI Mentor helper: Locate target day in history
+function findDayInHistory(query) {
+    const keys = Object.keys(allHistory);
+    if (keys.length === 0) return null;
+
+    const sortedDays = keys
+        .map(key => ({ key, value: allHistory[key] }))
+        .sort((a, b) => getParsedDate(a.key, a.value).getTime() - getParsedDate(b.key, b.value).getTime());
+        
+    const queryLower = query.toLowerCase();
+    
+    // Check for "latest" or "current" or "today"
+    if (queryLower.includes("latest") || queryLower.includes("current") || queryLower.includes("most recent") || queryLower.includes("today")) {
+        return sortedDays[sortedDays.length - 1];
+    }
+    
+    // Check for "last friday"
+    if (queryLower.includes("last friday") || queryLower.includes("previous friday")) {
+        for (let i = sortedDays.length - 1; i >= 0; i--) {
+            const day = sortedDays[i];
+            const dateStr = (day.value && day.value.date) ? day.value.date.toLowerCase() : day.key.toLowerCase();
+            if (dateStr.includes("friday")) {
+                return day;
+            }
+        }
+    }
+    
+    // Check for month names and day numbers (e.g. "June 24", "Jan 30")
+    const monthsShort = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+    const monthsFull = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+    
+    for (let mIdx = 0; mIdx < 12; mIdx++) {
+        const mFull = monthsFull[mIdx];
+        const mShort = monthsShort[mIdx];
+        if (queryLower.includes(mFull) || queryLower.includes(mShort)) {
+            // Try to extract a day number
+            const dayNumMatch = queryLower.match(/\b\d{1,2}\b/);
+            if (dayNumMatch) {
+                const dayNum = parseInt(dayNumMatch[0]);
+                for (const day of sortedDays) {
+                    const parsed = getParsedDate(day.key, day.value);
+                    if (parsed.getMonth() === mIdx && parsed.getDate() === dayNum) {
+                        return day;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Fallback search by raw key matching
+    for (const day of sortedDays) {
+        if (queryLower.includes(day.key.toLowerCase())) {
+            return day;
+        }
+        if (day.value && day.value.date && queryLower.includes(day.value.date.toLowerCase())) {
+            return day;
+        }
+    }
+    
+    return null;
+}
+
+// Chat AI Mentor helper: Find asset details on a specific day
+function getAssetInDay(day, assetQuery) {
+    if (!day || !day.value || !day.value.categories) return null;
+    const cleanQuery = assetQuery.toLowerCase();
+    
+    for (const [catName, assets] of Object.entries(day.value.categories)) {
+        for (const asset of assets) {
+            const nameLower = asset.name.toLowerCase();
+            const symbolLower = (asset.symbol || "").toLowerCase();
+            
+            if (cleanQuery.includes(nameLower) || nameLower.includes(cleanQuery) || 
+                (symbolLower && (cleanQuery.includes(symbolLower) || symbolLower.includes(cleanQuery)))) {
+                return { asset, category: catName };
+            }
+            
+            // Asset synonyms
+            if (cleanQuery.includes("gold") && nameLower === "gold") return { asset, category: catName };
+            if ((cleanQuery.includes("btc") || cleanQuery.includes("bitcoin")) && nameLower === "bitcoin") return { asset, category: catName };
+            if ((cleanQuery.includes("gas") || cleanQuery.includes("natgas") || cleanQuery.includes("ngas")) && (nameLower.includes("gas") || nameLower.includes("natgas"))) {
+                return { asset, category: catName };
+            }
+            if ((cleanQuery.includes("nasdaq") || cleanQuery.includes("ndx")) && nameLower === "nasdaq") return { asset, category: catName };
+            if ((cleanQuery.includes("spx") || cleanQuery.includes("s&p") || cleanQuery.includes("sp500")) && nameLower === "spx500") return { asset, category: catName };
+        }
+    }
+    return null;
+}
+
 // Chat AI Mentor responses database
 function getSmartChatResponse(query) {
     const textLower = query.toLowerCase();
     
-    if (textLower.includes("widow maker") || textLower.includes("natural gas") || textLower.includes("natgas") || textLower.includes("kold") || textLower.includes("boil")) {
-        return `Natural Gas is nicknamed the **"Widow Maker"** due to extreme weather-driven supply/demand shifts. My core rules for it are:
-1. **Never hold BOIL or KOLD** long-term (2x leverage decay will bleed your account).
-2. **COT Analysis**: Check commercials net positions vs managed money speculative extremes.
-3. **Daily Checklist**: Verify weather feeds (natgasweather.com), news calendars, and check 4hr technical confluences.
-4. **Position Sizing Formula**: Size = (Risk Limit) / (Entry - Stop). We always prefer hedging over raw stops to manage gap risk.`;
+    // 1. General Strategy / Rules Queries
+    if (textLower.includes("g7 rules") || textLower.includes("g7 strategy") || textLower.includes("g7 swing")) {
+        return `The G7 Swing Forex System focuses on High liquidity pairs (EUR/USD, GBP/USD, USD/JPY, USD/CHF).
+Rules:
+1. Determine trend on the Weekly chart (Weekly candle must make a higher high/low for bullish, lower high/low for bearish).
+2. Wait for hourly pullback to Bollinger Band extremes or 200 SMA.
+3. Check slow stochastics (14,7,3) to confirm oversold (<20) for buys or overbought (>80) for sells.
+4. Enter at the close of an hourly reversal candle (e.g. hammer, piercing line, harami) with a 2:1 Reward/Risk ratio.`;
+    }
+    
+    if (textLower.includes("grown-up rules") || textLower.includes("money management") || textLower.includes("position sizing") || textLower.includes("risk management") || textLower.includes("philosophy")) {
+        return `Discipline & Risk Management rules from Course 1:
+1. Never risk more than 1–2% of total capital on a single position.
+2. Sizing is based on stop-loss distance (R-units).
+3. Move stop-loss to entry (Stop-Breakeven or SBE) at 1.5R gains.
+4. Trim positions (30-50%) on Friday afternoon closes (Weekend de-risking) to guard against gap risk.`;
     }
 
-    if (textLower.includes("g7") || textLower.includes("swing system") || textLower.includes("arcisfx")) {
-        return `The G7 Swing Trading system is an indicator-assisted model for Major currency pairs:
-1. **Weekly candle** sets the direction (higher high/low = buy; lower high/low = sell).
-2. **Reversal levels** are placed 10 pips beyond the previous weekly candle's high/low.
-3. **Hourly close (Rule 1)** must touch the 100/200 Bollinger Bands or 200 SMA (Rule 3).
-4. **Stochastic (Rule 2)** must be oversold (<20) or overbought (>80).
-5. **Reversal shape (Rule 5)** (e.g. Hammer, Engulfing) triggers entry at close.
-6. **Stop Loss (Rule 6)** is placed 5-10 pips beyond the candle (20-60 pips max). Target is 2:1 reward/risk.`;
+    if (textLower.includes("natural gas") || textLower.includes("natgas") || textLower.includes("widow maker") || textLower.includes("boil") || textLower.includes("kold")) {
+        return `Natural Gas (Widow Maker) rules from Course 3:
+1. Volatility is driven by weather forecasts (Arctic blasts in winter, heatwaves in summer) and EIA weekly inventory reports.
+2. Contango Decay warning: Holding leveraged products (BOIL/KOLD) long-term causes rapid capital decay. Keep trades under 1-3 weeks.
+3. Entry Rule: Look for Breakout-Pullback (BOPB) where price breaks resistance, tests it as support, and prints a reversal candle.`;
     }
 
     if (textLower.includes("hedgehog") || textLower.includes("risk lock")) {
         return `The **Hedgehog strategy** uses opposite counter-contracts (e.g. holding a short leg to neutralize a long setup in drawdowns) rather than taking hard stop-loss slippage.
 The **Risk Lock method** is our trailing protection model: SBE (Stop Breakeven) is activated as soon as price moves 1.5x risk. Hedges are then added in staggered layers (1/3, 1/3, 1/3) to lock profits while letting the core trade run.`;
     }
-
-    if (textLower.includes("18000") || textLower.includes("cad") || textLower.includes("usd") || textLower.includes("capital allocation") || textLower.includes("my account")) {
-        return `With your portfolio consisting of three accounts ($18,000 CAD, $6,400 USD, and $2,600 USD), you should structure allocations like this:
-1. **$18,000 CAD (Account A):** Allocate to G7 Swing Forex & Index ETFs. Risk Unit (1.5%) = $270 CAD limit per trade. If trading GBPUSD with a 30-pip stop, your position sizing should be $9,000 CAD (0.9 mini lots).
-2. **$6,400 USD (Account B):** Sized for conviction stocks (NVDA, COIN) or Crypto. Risk Unit (1.5%) = $96 USD. If buying COIN, use options hedges (protective puts at 192) to lock max risk to $96.
-3. **$2,600 USD (Account C):** Hold in cash as a volatility/liquidity buffer. Sizing is automated in the dashboard simulator; choose your account from the dropdown to see exact allocation limits.`;
+    
+    // 2. Resolve target day in history (specific date, latest, or fallback to active dashboard day)
+    let targetDay = findDayInHistory(query);
+    let daySourceText = "";
+    if (targetDay) {
+        daySourceText = `for the parsed date ${targetDay.value && targetDay.value.date ? targetDay.value.date : targetDay.key}`;
+    } else {
+        // Fallback to currently selected dashboard day
+        if (activeDay && allHistory[activeDay]) {
+            targetDay = { key: activeDay, value: allHistory[activeDay] };
+            daySourceText = `for the selected day ${targetDay.value && targetDay.value.date ? targetDay.value.date : targetDay.key}`;
+        }
     }
-
-    if (textLower.includes("news") || textLower.includes("backtest") || textLower.includes("events") || textLower.includes("effective")) {
-        return `Backtesting with news events is highly effective. Veterans do NOT trade *during* CPI or FOMC rate prints because spreads blow out. Instead, they backtest the **post-news drift**:
-- Wait for the event hour rollover (Rule 1).
-- Look for stochastics washes (<20 or >80) at the 200-hour Bollinger Band.
-- Enter only when a reversal candle (e.g., Hammer) is confirmed at the close.
-This allows you to capture news-driven liquidity sweeps while avoiding the initial chaotic spread wicks.`;
+    
+    // 3. Match asset query
+    let assetMatch = null;
+    let assetQuery = "";
+    const assetsToSearch = [
+        "gold", "silver", "copper", "bitcoin", "btc", "eth", "ethereum", 
+        "sol", "solana", "xrp", "ripple", "nasdaq", "ndx", "spx500", "spx", 
+        "ger30", "dax", "msft", "nvda", "pltr", "coin", "mstr", "tsla", 
+        "avgo", "googl", "ngas.f", "natgas", "wti", "usdhf", "eurusd", "gbpusd"
+    ];
+    
+    for (const name of assetsToSearch) {
+        if (textLower.includes(name)) {
+            assetQuery = name;
+            if (targetDay) {
+                assetMatch = getAssetInDay(targetDay, name);
+            }
+            break;
+        }
     }
+    
+    // 4. Formulate response based on asset and day
+    if (targetDay && assetMatch) {
+        const a = assetMatch.asset;
+        return `According to the ledger history ${daySourceText}:
+• **Asset**: ${a.name} (${assetMatch.category})
+• **Position**: ${a.position}
+• **Size**: ${a.size}
+• **Last Change**: ${a.chng}
 
-    if (textLower.includes("rule") || textLower.includes("philosophy") || textLower.includes("risk management")) {
-        return `My strategy operates under four strict veteran pillars:
-1. **Capital Preservation**: Never open a trade without a defined, structural stop-loss or options-based hedge trigger.
-2. **Stop Breakeven (SBE)**: Once a trade hits 1.5R gain, the stop-loss must be moved to entry to make it a free trade.
-3. **Derivatives Hedging**: Use opposite contract hedges at major support/resistance pivots rather than triggering market-order stop slippages.
-4. **Weekend De-risking**: Systematically scale-out (trim by 30-50%) high-conviction indices and volatile assets on Friday afternoon closes to guard against gap risk.`;
+*Note for this day:* "${targetDay.value.notes || 'No general notes recorded for this day.'}"`;
+    } else if (targetDay && !assetQuery && (textLower.includes("june") || textLower.includes("jan") || textLower.includes("feb") || textLower.includes("mar") || textLower.includes("apr") || textLower.includes("may") || textLower.includes("latest") || textLower.includes("today") || textLower.includes("friday"))) {
+        // Requested date but no specific asset -> summarize the day
+        const cats = targetDay.value.categories || {};
+        let positionsText = "";
+        for (const [catName, assets] of Object.entries(cats)) {
+            if (assets.length > 0) {
+                const list = assets.map(a => `${a.name} (${a.position}, size: ${a.size})`).join(", ");
+                positionsText += `\n• **${catName}**: ${list}`;
+            }
+        }
+        return `Ledger summary ${daySourceText}:
+• **Macro Notes**: "${targetDay.value.notes || 'None'}"
+• **Active Positions**: ${positionsText || 'None'}`;
     }
+    
+    // 5. Asset requested but no specific day found/selected
+    if (assetQuery) {
+        // Find the latest day in history where this asset was traded
+        const keys = Object.keys(allHistory);
+        const sortedDays = keys
+            .map(key => ({ key, value: allHistory[key] }))
+            .sort((a, b) => getParsedDate(a.key, a.value).getTime() - getParsedDate(b.key, b.value).getTime());
+            
+        let lastDayTraded = null;
+        let lastAssetDetails = null;
+        for (let i = sortedDays.length - 1; i >= 0; i--) {
+            const day = sortedDays[i];
+            const found = getAssetInDay(day, assetQuery);
+            if (found) {
+                lastDayTraded = day;
+                lastAssetDetails = found;
+                break;
+            }
+        }
+        
+        if (lastDayTraded && lastAssetDetails) {
+            const a = lastAssetDetails.asset;
+            const dateStr = lastDayTraded.value.date || lastDayTraded.key;
+            return `I found the most recent trade record for **${a.name}** on **${dateStr}**:
+• **Position**: ${a.position}
+• **Size**: ${a.size}
+• **Last Change**: ${a.chng}
 
-    if (textLower.includes("gold") && (textLower.includes("flip") || textLower.includes("reversal") || textLower.includes("long") || textLower.includes("short"))) {
-        return `Gold (XAUUSD) was shorted (60-75% size) during late January resistance sweeps. On Friday, Jan 30, Gold broke out of key structural resistance, triggering an immediate regime-shift. Following G7 reversal rules, shorts were closed and a 10% test Long was opened at 4920. This caps initial risk while participating in the new trend.`;
+*Note from that day:* "${lastDayTraded.value.notes}"`;
+        }
     }
-
-    if (textLower.includes("coin") || textLower.includes("mstr") || textLower.includes("100%")) {
+    
+    // 6. Explicit hardcoded keyword overrides (fixed to prevent substring issues like 'bitcoin' containing 'coin')
+    const words = textLower.split(/[\s,?.!]+/);
+    
+    if (words.includes("coin") || words.includes("mstr") || textLower.includes("100%")) {
         return `COIN and MSTR are held at 100% sizes as equity proxies. However, they are walled off with protective put options (e.g., COIN hedged at 192). This restricts maximum possible drawdown to a defined 1.5% portfolio risk unit, capturing high-beta upside without exposing the core account to ruin.`;
     }
-
-    if (textLower.includes("btc") || textLower.includes("bitcoin") || textLower.includes("staggered")) {
+    
+    if (words.includes("btc") || words.includes("bitcoin") || textLower.includes("staggered")) {
         return `Bitcoin (BTCUSD) positions are protected by staggered hedge levels (e.g. 1/3 at 89300, 1/3 at 86900, 1/3 at 85900). This tiered stop structure prevents a single 'wick sweep' from fully liquidating your core long position, giving the trade breathing room while progressively locking in downside protection.`;
     }
+    
+    if (words.includes("gold") && (textLower.includes("flip") || textLower.includes("reversal") || textLower.includes("long") || textLower.includes("short") || textLower.includes("strategy") || textLower.includes("suggest"))) {
+        return `Gold (XAUUSD) was shorted (60-75% size) during late January resistance sweeps. On Friday, Jan 30, Gold broke out of key structural resistance, triggering an immediate regime-shift. Following G7 reversal rules, shorts were closed and a 10% test Long was opened at 4920. This caps initial risk while participating in the new trend.`;
+    }
+    
+    // 7. General fallback
+    return `I am your AI Trading Mentor. I have access to your full 106-day parsed portfolio history and all three strategy courses (Grown-Up Rules, G7 Swing System, NATGAS Widow Maker).
 
-    return `I have parsed the 106-day veteran trading portfolio. I can answer questions about specific trades, explain my stop-loss / SBE adjustments, or detail my staggered hedge levels for crypto, metals, and index positions. What trade details would you like me to look up?`;
+You can ask me questions like:
+• "What are the G7 rules?"
+• "Explain the 100% position sizing on COIN."
+• "What positions did we have on June 24?"
+• "Show the latest trade for Gold."
+• "Explain the weekend de-risking rules."`;
 }
 
 function sendChatMessage() {
