@@ -1791,6 +1791,27 @@ function loadTradingViewChart(symbol) {
 }
 
 // Render historical position plot
+function extractPriceFromPosition(positionStr) {
+    if (!positionStr) return null;
+    const regexes = [
+        /(?:long|short)\s+([0-9\.,]+)/i,
+        /(?:at|now\s+at)\s+([0-9\.,]+)/i,
+        /hedged\s+(?:at\s+)?([0-9\.,]+)/i,
+        /collar\s+(?:at\s+)?([0-9\.,]+)/i,
+        /strike\s+([0-9\.,]+)/i
+    ];
+    for (const regex of regexes) {
+        const match = positionStr.match(regex);
+        if (match && match[1]) {
+            const clean = parseFloat(match[1].replace(/,/g, ''));
+            if (!isNaN(clean) && clean > 0) {
+                return clean;
+            }
+        }
+    }
+    return null;
+}
+
 function renderLedgerHistoryChart(assetName) {
     const container = document.getElementById("tradingview-chart-div");
     container.innerHTML = "";
@@ -1819,11 +1840,13 @@ function renderLedgerHistoryChart(assetName) {
                 size = parseFloat(sizeStr.replace('%', ''));
             } catch(e) {}
             
+            const price = extractPriceFromPosition(foundAsset.position);
             dataPoints.push({
                 dateLabel: day.value.date || day.key,
                 position: foundAsset.position,
                 size: size,
                 rawSize: sizeStr,
+                price: price,
                 type: getTypeForPosition(foundAsset.position)
             });
         }
@@ -1834,18 +1857,50 @@ function renderLedgerHistoryChart(assetName) {
         return;
     }
 
+    // Forward-fill & backward-fill prices
+    let lastKnownPrice = null;
+    for (let i = 0; i < dataPoints.length; i++) {
+        if (dataPoints[i].price !== null) {
+            lastKnownPrice = dataPoints[i].price;
+        } else if (lastKnownPrice !== null) {
+            dataPoints[i].price = lastKnownPrice;
+        }
+    }
+    let firstKnownPrice = null;
+    for (let i = dataPoints.length - 1; i >= 0; i--) {
+        if (dataPoints[i].price !== null) {
+            firstKnownPrice = dataPoints[i].price;
+        } else if (firstKnownPrice !== null && dataPoints[i].price === null) {
+            dataPoints[i].price = firstKnownPrice;
+        }
+    }
+    // Fallback if no price was parsed at all
+    dataPoints.forEach(dp => {
+        if (dp.price === null) dp.price = 100;
+    });
+
     const width = container.clientWidth || 550;
     const height = container.clientHeight || 300;
     const paddingLeft = 45;
-    const paddingRight = 20;
+    const paddingRight = 55; // Expanded for right Y-axis
     const paddingTop = 30;
     const paddingBottom = 45;
     
     const chartWidth = width - paddingLeft - paddingRight;
     const chartHeight = height - paddingTop - paddingBottom;
     
+    // Y Sizing calculations (Left Axis)
     const maxVal = Math.max(...dataPoints.map(d => d.size), 10);
     const yMax = Math.ceil(maxVal / 10) * 10; 
+
+    // Y Price calculations (Right Axis)
+    const prices = dataPoints.map(d => d.price);
+    const maxPrice = Math.max(...prices);
+    const minPrice = Math.min(...prices);
+    const priceRange = maxPrice - minPrice || 1;
+    const priceMinScale = minPrice - priceRange * 0.1;
+    const priceMaxScale = maxPrice + priceRange * 0.1;
+    const priceScaleRange = priceMaxScale - priceMinScale || 1;
 
     let svgContent = `<svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" style="background: #0d1117; font-family: sans-serif; border-radius: 8px; border: 1px solid var(--border-color);">`;
     
@@ -1853,13 +1908,13 @@ function renderLedgerHistoryChart(assetName) {
     svgContent += `
         <defs>
             <linearGradient id="area-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stop-color="var(--primary-color)" stop-opacity="0.3" />
+                <stop offset="0%" stop-color="var(--primary-color)" stop-opacity="0.15" />
                 <stop offset="100%" stop-color="var(--primary-color)" stop-opacity="0" />
             </linearGradient>
         </defs>
     `;
 
-    // Grid lines (y axis)
+    // Grid lines and labels (left Y-axis: position size)
     const gridCount = 4;
     for (let i = 0; i <= gridCount; i++) {
         const yVal = (yMax / gridCount) * i;
@@ -1870,15 +1925,50 @@ function renderLedgerHistoryChart(assetName) {
         `;
     }
 
-    // Plot data points
-    let pointsStr = "";
-    let dotsSvg = "";
-    
+    // Right Y-axis (Asset Price labels)
+    for (let i = 0; i <= gridCount; i++) {
+        const yValPrice = priceMinScale + (priceScaleRange / gridCount) * i;
+        const yPos = height - paddingBottom - (i / gridCount) * chartHeight;
+        
+        let label = yValPrice.toFixed(2);
+        if (yValPrice >= 1000) label = (yValPrice / 1000).toFixed(1) + "k";
+        if (assetName.toLowerCase().includes("gas") || assetName.toLowerCase().includes("ngas")) {
+            label = yValPrice.toFixed(3);
+        }
+        svgContent += `
+            <text x="${width - paddingRight + 8}" y="${yPos + 3}" fill="#00bcd4" font-size="9" text-anchor="start">${label}</text>
+        `;
+    }
+
+    // Plot Sizing Shading Area (exposure indicator)
+    let sizePointsStr = "";
     dataPoints.forEach((dp, idx) => {
         const xPos = paddingLeft + (idx / (dataPoints.length - 1 || 1)) * chartWidth;
         const yPos = height - paddingBottom - (dp.size / yMax) * chartHeight;
-        
-        pointsStr += `${xPos},${yPos} `;
+        sizePointsStr += `${xPos},${yPos} `;
+    });
+    let areaPointsStr = `${paddingLeft},${height - paddingBottom} ` + sizePointsStr + `${paddingLeft + chartWidth},${height - paddingBottom}`;
+    svgContent += `
+        <polygon points="${areaPointsStr}" fill="url(#area-grad)" />
+        <polyline points="${sizePointsStr}" fill="none" stroke="rgba(56, 139, 253, 0.3)" stroke-width="1" stroke-dasharray="2,2" />
+    `;
+
+    // Plot Price Line (neon blue)
+    let pricePointsStr = "";
+    dataPoints.forEach((dp, idx) => {
+        const xPos = paddingLeft + (idx / (dataPoints.length - 1 || 1)) * chartWidth;
+        const yPosPrice = height - paddingBottom - ((dp.price - priceMinScale) / priceScaleRange) * chartHeight;
+        pricePointsStr += `${xPos},${yPosPrice} `;
+    });
+    svgContent += `
+        <polyline points="${pricePointsStr}" fill="none" stroke="#00bcd4" stroke-width="2.5" />
+    `;
+
+    // Plot marked dots directly on the Price Line
+    let dotsSvg = "";
+    dataPoints.forEach((dp, idx) => {
+        const xPos = paddingLeft + (idx / (dataPoints.length - 1 || 1)) * chartWidth;
+        const yPosPrice = height - paddingBottom - ((dp.price - priceMinScale) / priceScaleRange) * chartHeight;
         
         let dotColor = "var(--color-success)"; 
         if (dp.type === "short") dotColor = "#ff7b72"; 
@@ -1888,22 +1978,13 @@ function renderLedgerHistoryChart(assetName) {
         
         dotsSvg += `
             <g>
-                <circle cx="${xPos}" cy="${yPos}" r="4" fill="${dotColor}" stroke="#0d1117" stroke-width="1.5"></circle>
-                <circle cx="${xPos}" cy="${yPos}" r="8" fill="${dotColor}" fill-opacity="0" style="cursor: pointer;">
-                    <title>${dp.dateLabel}\nPosition: ${dp.position}\nSizing: ${dp.rawSize}</title>
+                <circle cx="${xPos}" cy="${yPosPrice}" r="5" fill="${dotColor}" stroke="#0d1117" stroke-width="1.5"></circle>
+                <circle cx="${xPos}" cy="${yPosPrice}" r="9" fill="${dotColor}" fill-opacity="0" style="cursor: pointer;">
+                    <title>${dp.dateLabel}\nPosition: ${dp.position}\nSizing: ${dp.rawSize}\nPrice: ${dp.price.toFixed(2)}</title>
                 </circle>
             </g>
         `;
     });
-
-    let areaPointsStr = `${paddingLeft},${height - paddingBottom} ` + pointsStr + `${paddingLeft + chartWidth},${height - paddingBottom}`;
-    svgContent += `
-        <polygon points="${areaPointsStr}" fill="url(#area-grad)" />
-    `;
-    
-    svgContent += `
-        <polyline points="${pointsStr}" fill="none" stroke="var(--primary-color)" stroke-width="2" />
-    `;
     
     svgContent += dotsSvg;
 
