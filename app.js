@@ -3007,10 +3007,17 @@ function filterMasterLedgerTable() {
             badgeTextColor = "#d29922";
         }
 
+        const dailyNotes = trade.rawDay.value.notes || "Sizing and hedging levels maintained. Capital risk parameters active.";
+
         tr.innerHTML = `
             <td style="padding: 0.6rem 0.75rem; white-space: nowrap;">${trade.date}</td>
             <td style="padding: 0.6rem 0.75rem; font-weight: 600; color: var(--text-primary);">${trade.assetName}</td>
-            <td style="padding: 0.6rem 0.75rem; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${trade.position}</td>
+            <td style="padding: 0.6rem 0.75rem;">
+                <div style="font-weight: 500; color: var(--text-secondary);">${trade.position}</div>
+                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 3px; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${dailyNotes}">
+                    <i class="fa-regular fa-comment-dots" style="margin-right: 4px; font-size: 0.6rem; color: #00bcd4;"></i>${dailyNotes}
+                </div>
+            </td>
             <td style="padding: 0.6rem 0.75rem; font-family: monospace; color: #00bcd4;">${trade.size}</td>
             <td style="padding: 0.6rem 0.75rem; text-align: right;">
                 <span class="chart-direction-badge" style="background: ${badgeColor}; color: ${badgeTextColor}; border-radius: 4px; padding: 2px 6px; font-size: 0.65rem; font-weight: 600;">
@@ -3060,22 +3067,24 @@ function selectMasterLedgerRow(element, trade) {
     if (stopMatch && stopMatch[1]) stopLabel = `$${parseFloat(stopMatch[1].replace(/,/g, '')).toFixed(2)}`;
     document.getElementById("master-study-stat-stop").innerText = stopLabel;
 
-    // AI movement strategy generator text
-    let strategyText = "";
+    // AI movement strategy generator text merged with trader's actual comments
+    const dailyNotes = trade.rawDay.value.notes || "Sizing and hedging levels maintained. Capital risk parameters active.";
+    let strategyText = `<strong>Trader's Rationale:</strong><br/>"${dailyNotes}"<br/><br/>`;
+    
     const nameLower = trade.assetName.toLowerCase();
     
     if (nameLower.includes("bitcoin") || nameLower.includes("btc")) {
-        strategyText = `**Strategy Analysis (Crypto Campaign)**:\nThis Bitcoin trade utilizes order block sweeps on the 4H timeframe. Position sizes were scaled dynamically up to 93% using staggered hedges to minimize average entry drawdown. A hard stop-loss is systematically converted to break-even (SBE) once price advances past 1.5R.`;
+        strategyText += `<strong>Sizing & Strategy:</strong><br/>This Bitcoin setup utilizes order block sweeps on the 4H timeframe. Position sizes were scaled dynamically up to 93% using staggered hedges to minimize average entry drawdown. A hard stop-loss is systematically converted to break-even (SBE) once price advances past 1.5R.`;
     } else if (nameLower.includes("gold") || nameLower.includes("silver")) {
-        strategyText = `**Strategy Analysis (Precious Metals Sweep)**:\nThis metals campaign represents weekly range resistance sweeps. When price encountered historical ceiling resistance, short hedge overlays were executed to isolate downside risk. Positions were unhedged at support lows or closed out at SBE profit boundaries.`;
+        strategyText += `<strong>Sizing & Strategy:</strong><br/>This metals campaign represents weekly range resistance sweeps. When price encountered historical ceiling resistance, short hedge overlays were executed to isolate downside risk. Positions were unhedged at support lows or closed out at SBE profit boundaries.`;
     } else if (nameLower.includes("gas") || nameLower.includes("ngas")) {
-        strategyText = `**Strategy Analysis (NATGAS Widow Maker)**:\nNATGAS employs a strict multi-tier protective structure. Major entries were initiated near key historical bottom supports (like 2.575) using option collars. If the asset gaps down or violates support, option delta adjustments shield 100% of the account value past the collar boundary.`;
+        strategyText += `<strong>Sizing & Strategy:</strong><br/>NATGAS employs a strict multi-tier protective structure. Major entries were initiated near key historical bottom supports (like 2.575) using option collars. If the asset gaps down or violates support, option delta adjustments shield 100% of the account value past the collar boundary.`;
     } else if (nameLower.includes("mstr") || nameLower.includes("coin")) {
-        strategyText = `**Strategy Analysis (Conviction Options Collar)**:\nCOIN/MSTR equity setups were built using Options Put Collars. By overlaying long stocks with long protective puts and short out-of-the-money calls, the trader locked risk to exactly $90.00 (1.5% capital bounds), allowing up to 100%+ portfolio exposure safely.`;
+        strategyText += `<strong>Sizing & Strategy:</strong><br/>COIN/MSTR equity setups were built using Options Put Collars. By overlaying long stocks with long protective puts and short out-of-the-money calls, the trader locked risk to exactly $90.00 (1.5% capital bounds), allowing up to 100%+ portfolio exposure safely.`;
     } else if (nameLower.includes("wti") || nameLower.includes("oil")) {
-        strategyText = `**Strategy Analysis (Crude Oil Trend Pullback)**:\nThis crude oil campaign scaled entries on pullback wicks. Sizing adjustments (such as 73.38, 69.60, and 68.87) were treated as a single unified portfolio risk block, moving stops to entry (BTA) to defend against gap risk on weekends.`;
+        strategyText += `<strong>Sizing & Strategy:</strong><br/>This crude oil campaign scaled entries on pullback wicks. Sizing adjustments (such as 73.38, 69.60, and 68.87) were treated as a single unified portfolio risk block, moving stops to entry (BTA) to defend against gap risk on weekends.`;
     } else {
-        strategyText = `**Strategy Analysis (G7 Forex/Equities)**:\nThis trade was structured using G7 swing guidelines. Position sizes were capped at 1.5% max account risk, utilizing hourly closing reversals on the 200 SMA and stochastic oversold triggers to lock in high R/R ratio setups.`;
+        strategyText += `<strong>Sizing & Strategy:</strong><br/>This trade was structured using G7 swing guidelines. Position sizes were capped at 1.5% max account risk, utilizing hourly closing reversals on the 200 SMA and stochastics triggers to lock in high R/R ratio setups.`;
     }
     
     document.getElementById("master-study-analysis").innerHTML = strategyText.replace(/\n/g, '<br/>');
