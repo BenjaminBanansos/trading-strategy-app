@@ -352,7 +352,10 @@
                                     <span class="chart-ticker-name" id="journal-pattern-name">G7 Weekly Resistance Sweep</span>
                                     <span class="chart-direction-badge Short" id="journal-pattern-badge" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">Short Setup</span>
                                 </div>
-                                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;"><i class="fa-solid fa-clock"></i> 4-Hour Timeframe Analysis</span>
+                                <div class="chart-type-selectors" style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <button class="chart-toggle-btn active" id="journal-toggle-pattern" onclick="setJournalChartMode('pattern')" style="background: var(--primary-color); border: 1px solid var(--primary-color); color: #fff; font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s ease;">G7 Guide</button>
+                                    <button class="chart-toggle-btn" id="journal-toggle-history" onclick="setJournalChartMode('history')" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s ease;">Trade History</button>
+                                </div>
                             </div>
                             
                             <!-- Custom 4H SVG Chart Container -->

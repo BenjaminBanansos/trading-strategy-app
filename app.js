@@ -2229,12 +2229,17 @@ const journalCategories = {
     }
 };
 
+let journalChartMode = 'pattern';
+let activeJournalCat = 'metals';
+
 function selectJournalCategory(catName) {
     const journalInfo = journalCategories[catName];
     if (!journalInfo) return;
     
-    // Update active button state
-    document.querySelectorAll(".module-item").forEach(item => {
+    activeJournalCat = catName;
+    
+    // Update active button state restricted only to the journal view sidebar
+    document.querySelectorAll("#journal-view .module-item").forEach(item => {
         if (item.id === `journal-cat-${catName}`) {
             item.classList.add("active");
             item.style.background = "rgba(255,255,255,0.03)";
@@ -2273,8 +2278,12 @@ function selectJournalCategory(catName) {
     // Populate trade log table
     populateJournalLedgerTable(catName);
     
-    // Render 4H Chart
-    drawJournal4HChart(journalInfo.chartSetup);
+    // Render selected chart type
+    if (journalChartMode === 'pattern') {
+        drawJournal4HChart(journalInfo.chartSetup);
+    } else {
+        drawJournalHistoricalChart(getPrimaryAssetForJournalCat(catName));
+    }
 }
 
 function populateJournalLedgerTable(catName) {
@@ -2635,4 +2644,242 @@ function renderCourseInlineChart(courseIdx, slideIdx, page) {
             container.innerHTML = svgContent;
         });
     }, 50);
+}
+
+// AI Pattern Journal Chart modes and helpers
+function setJournalChartMode(mode) {
+    journalChartMode = mode;
+    
+    const btnPattern = document.getElementById("journal-toggle-pattern");
+    const btnHistory = document.getElementById("journal-toggle-history");
+    if (!btnPattern || !btnHistory) return;
+    
+    if (mode === 'pattern') {
+        btnPattern.classList.add("active");
+        btnPattern.style.background = "var(--primary-color)";
+        btnPattern.style.borderColor = "var(--primary-color)";
+        btnPattern.style.color = "#fff";
+        
+        btnHistory.classList.remove("active");
+        btnHistory.style.background = "transparent";
+        btnHistory.style.borderColor = "var(--border-color)";
+        btnHistory.style.color = "var(--text-secondary)";
+    } else {
+        btnHistory.classList.add("active");
+        btnHistory.style.background = "var(--primary-color)";
+        btnHistory.style.borderColor = "var(--primary-color)";
+        btnHistory.style.color = "#fff";
+        
+        btnPattern.classList.remove("active");
+        btnPattern.style.background = "transparent";
+        btnPattern.style.borderColor = "var(--border-color)";
+        btnPattern.style.color = "var(--text-secondary)";
+    }
+    
+    // Re-trigger select to redraw
+    selectJournalCategory(activeJournalCat);
+}
+
+function getPrimaryAssetForJournalCat(catName) {
+    if (catName === 'metals') return 'Gold';
+    if (catName === 'crypto') return 'Bitcoin';
+    if (catName === 'stocks') return 'MSTR';
+    if (catName === 'energies') return 'NGAS.F';
+    if (catName === 'indices') return 'NASDAQ';
+    if (catName === 'forex') return 'GBPUSD';
+    if (catName === 'softs') return 'Silver'; // Fallback
+    return 'Gold';
+}
+
+function drawJournalHistoricalChart(assetName) {
+    const container = document.getElementById("journal-pattern-chart-div");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const keys = Object.keys(allHistory);
+    const sortedDays = keys
+        .map(key => ({ key, value: allHistory[key] }))
+        .sort((a, b) => getParsedDate(a.key, a.value).getTime() - getParsedDate(b.key, b.value).getTime());
+    
+    const dataPoints = [];
+    
+    sortedDays.forEach(day => {
+        let foundAsset = null;
+        for (const [catName, assets] of Object.entries(day.value.categories || {})) {
+            const found = assets.find(a => a.name.toLowerCase() === assetName.toLowerCase());
+            if (found) {
+                foundAsset = found;
+                break;
+            }
+        }
+        
+        if (foundAsset) {
+            let size = 0;
+            const sizeStr = foundAsset.size || "0%";
+            try {
+                size = parseFloat(sizeStr.replace('%', ''));
+            } catch(e) {}
+            
+            const price = extractPriceFromPosition(foundAsset.position);
+            dataPoints.push({
+                dateLabel: day.value.date || day.key,
+                position: foundAsset.position,
+                size: size,
+                rawSize: sizeStr,
+                price: price,
+                type: getTypeForPosition(foundAsset.position)
+            });
+        }
+    });
+
+    if (dataPoints.length === 0) {
+        container.innerHTML = `<div class="tv-placeholder">No history found for ${assetName}</div>`;
+        return;
+    }
+
+    // Forward-fill & backward-fill prices
+    let lastKnownPrice = null;
+    for (let i = 0; i < dataPoints.length; i++) {
+        if (dataPoints[i].price !== null) {
+            lastKnownPrice = dataPoints[i].price;
+        } else if (lastKnownPrice !== null) {
+            dataPoints[i].price = lastKnownPrice;
+        }
+    }
+    let firstKnownPrice = null;
+    for (let i = dataPoints.length - 1; i >= 0; i--) {
+        if (dataPoints[i].price !== null) {
+            firstKnownPrice = dataPoints[i].price;
+        } else if (firstKnownPrice !== null && dataPoints[i].price === null) {
+            dataPoints[i].price = firstKnownPrice;
+        }
+    }
+    dataPoints.forEach(dp => {
+        if (dp.price === null) dp.price = 100;
+    });
+
+    const width = container.clientWidth || 550;
+    const height = container.clientHeight || 350;
+    const paddingLeft = 45;
+    const paddingRight = 55;
+    const paddingTop = 30;
+    const paddingBottom = 45;
+    
+    const chartWidth = width - paddingLeft - paddingRight;
+    const chartHeight = height - paddingTop - paddingBottom;
+    
+    // Y Sizing (Left Axis)
+    const maxVal = Math.max(...dataPoints.map(d => d.size), 10);
+    const yMax = Math.ceil(maxVal / 10) * 10; 
+
+    // Y Price (Right Axis)
+    const prices = dataPoints.map(d => d.price);
+    const maxPrice = Math.max(...prices);
+    const minPrice = Math.min(...prices);
+    const priceRange = maxPrice - minPrice || 1;
+    const priceMinScale = minPrice - priceRange * 0.1;
+    const priceMaxScale = maxPrice + priceRange * 0.1;
+    const priceScaleRange = priceMaxScale - priceMinScale || 1;
+
+    let svgContent = `<svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" style="background: #0d1117; font-family: sans-serif; border-radius: 8px; border: 1px solid var(--border-color);">`;
+    
+    svgContent += `
+        <defs>
+            <linearGradient id="journal-area-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="var(--primary-color)" stop-opacity="0.15" />
+                <stop offset="100%" stop-color="var(--primary-color)" stop-opacity="0" />
+            </linearGradient>
+        </defs>
+    `;
+
+    // Grid lines and labels (left Y-axis)
+    const gridCount = 4;
+    for (let i = 0; i <= gridCount; i++) {
+        const yVal = (yMax / gridCount) * i;
+        const yPos = height - paddingBottom - (yVal / yMax) * chartHeight;
+        svgContent += `
+            <line x1="${paddingLeft}" y1="${yPos}" x2="${width - paddingRight}" y2="${yPos}" stroke="#21262d" stroke-dasharray="3,3" stroke-width="1" />
+            <text x="${paddingLeft - 8}" y="${yPos + 3}" fill="#8b949e" font-size="9" text-anchor="end">${yVal}%</text>
+        `;
+    }
+
+    // Right Y-axis (Asset Price labels)
+    for (let i = 0; i <= gridCount; i++) {
+        const yValPrice = priceMinScale + (priceScaleRange / gridCount) * i;
+        const yPos = height - paddingBottom - (i / gridCount) * chartHeight;
+        
+        let label = yValPrice.toFixed(2);
+        if (yValPrice >= 1000) label = (yValPrice / 1000).toFixed(1) + "k";
+        if (assetName.toLowerCase().includes("gas") || assetName.toLowerCase().includes("ngas")) {
+            label = yValPrice.toFixed(3);
+        }
+        svgContent += `
+            <text x="${width - paddingRight + 8}" y="${yPos + 3}" fill="#00bcd4" font-size="9" text-anchor="start">${label}</text>
+        `;
+    }
+
+    // Plot Sizing Shading Area
+    let sizePointsStr = "";
+    dataPoints.forEach((dp, idx) => {
+        const xPos = paddingLeft + (idx / (dataPoints.length - 1 || 1)) * chartWidth;
+        const yPos = height - paddingBottom - (dp.size / yMax) * chartHeight;
+        sizePointsStr += `${xPos},${yPos} `;
+    });
+    let areaPointsStr = `${paddingLeft},${height - paddingBottom} ` + sizePointsStr + `${paddingLeft + chartWidth},${height - paddingBottom}`;
+    svgContent += `
+        <polygon points="${areaPointsStr}" fill="url(#journal-area-grad)" />
+        <polyline points="${sizePointsStr}" fill="none" stroke="rgba(56, 139, 253, 0.3)" stroke-width="1" stroke-dasharray="2,2" />
+    `;
+
+    // Plot Price Line (neon blue)
+    let pricePointsStr = "";
+    dataPoints.forEach((dp, idx) => {
+        const xPos = paddingLeft + (idx / (dataPoints.length - 1 || 1)) * chartWidth;
+        const yPosPrice = height - paddingBottom - ((dp.price - priceMinScale) / priceScaleRange) * chartHeight;
+        pricePointsStr += `${xPos},${yPosPrice} `;
+    });
+    svgContent += `
+        <polyline points="${pricePointsStr}" fill="none" stroke="#00bcd4" stroke-width="2.5" />
+    `;
+
+    // Plot marked dots directly on the Price Line
+    let dotsSvg = "";
+    dataPoints.forEach((dp, idx) => {
+        const xPos = paddingLeft + (idx / (dataPoints.length - 1 || 1)) * chartWidth;
+        const yPosPrice = height - paddingBottom - ((dp.price - priceMinScale) / priceScaleRange) * chartHeight;
+        
+        let dotColor = "var(--color-success)"; 
+        if (dp.type === "short") dotColor = "#ff7b72"; 
+        if (dp.position.toLowerCase().includes("hedge") || dp.position.toLowerCase().includes("collar") || dp.position.toLowerCase().includes("protective")) {
+            dotColor = "#d29922"; 
+        }
+        
+        dotsSvg += `
+            <g>
+                <circle cx="${xPos}" cy="${yPosPrice}" r="5" fill="${dotColor}" stroke="#0d1117" stroke-width="1.5"></circle>
+                <circle cx="${xPos}" cy="${yPosPrice}" r="9" fill="${dotColor}" fill-opacity="0" style="cursor: pointer;">
+                    <title>${dp.dateLabel}\nPosition: ${dp.position}\nSizing: ${dp.rawSize}\nPrice: ${dp.price.toFixed(2)}</title>
+                </circle>
+            </g>
+        `;
+    });
+    svgContent += dotsSvg;
+
+    // Draw X-Axis labels
+    const labelStep = Math.max(1, Math.ceil(dataPoints.length / 5));
+    dataPoints.forEach((dp, idx) => {
+        if (idx === 0 || idx === dataPoints.length - 1 || idx % labelStep === 0) {
+            const xPos = paddingLeft + (idx / (dataPoints.length - 1 || 1)) * chartWidth;
+            let shortDate = dp.dateLabel;
+            if (shortDate.includes(",")) {
+                shortDate = shortDate.split(",")[1].trim(); 
+            }
+            svgContent += `
+                <text x="${xPos}" y="${height - paddingBottom + 18}" fill="#8b949e" font-size="8" text-anchor="middle" transform="rotate(-15, ${xPos}, ${height - paddingBottom + 18})">${shortDate}</text>
+            `;
+        }
+    });
+
+    svgContent += `</svg>`;
+    container.innerHTML = svgContent;
 }
