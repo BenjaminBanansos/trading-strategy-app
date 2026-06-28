@@ -166,12 +166,15 @@
                         
                         <!-- Chart Panel -->
                         <section class="chart-panel">
-                            <div class="chart-header">
+                            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                                 <div class="chart-ticker-info">
                                     <span class="chart-ticker-name" id="selected-asset-name">Bitcoin</span>
                                     <span class="chart-direction-badge long" id="selected-asset-badge">Long</span>
                                 </div>
-                                <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-solid fa-bolt"></i> Live Feed</span>
+                                <div class="chart-toggle-group" style="display: flex; gap: 0.25rem; background: rgba(255,255,255,0.05); padding: 3px; border-radius: 6px; border: 1px solid var(--border-color);">
+                                    <button class="toggle-btn active" id="btn-live-chart" onclick="setChartMode('live')" style="background: var(--primary-color); border: none; border-radius: 4px; padding: 4px 10px; font-size: 0.7rem; color: #fff; cursor: pointer; transition: all 0.2s ease; font-weight: 600;">Live Feed</button>
+                                    <button class="toggle-btn" id="btn-ledger-chart" onclick="setChartMode('ledger')" style="background: transparent; border: none; border-radius: 4px; padding: 4px 10px; font-size: 0.7rem; color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease; font-weight: 600;">Ledger Plots</button>
+                                </div>
                             </div>
 
                             <!-- TradingView widget container -->

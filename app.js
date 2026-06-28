@@ -1169,7 +1169,7 @@ function selectAsset(asset, assetType) {
     const reasonText = getReasoningForAsset(asset, badge.innerText);
     document.getElementById("strategy-reasoning-content").innerText = reasonText;
 
-    loadTradingViewChart(getSymbolForAsset(asset.name));
+    updateChartDisplay();
 
     const posLower = asset.position.toLowerCase();
     let detectedDrawdown = 25;
@@ -1702,6 +1702,47 @@ function getTypeForPosition(posText) {
     return "long";
 }
 
+let chartMode = 'live'; // 'live' or 'ledger'
+
+function setChartMode(mode) {
+    chartMode = mode;
+    
+    // Update button active state
+    const btnLive = document.getElementById("btn-live-chart");
+    const btnLedger = document.getElementById("btn-ledger-chart");
+    if (btnLive && btnLedger) {
+        if (mode === 'live') {
+            btnLive.classList.add("active");
+            btnLive.style.background = "var(--primary-color)";
+            btnLive.style.color = "#fff";
+            btnLedger.classList.remove("active");
+            btnLedger.style.background = "transparent";
+            btnLedger.style.color = "var(--text-secondary)";
+        } else {
+            btnLedger.classList.add("active");
+            btnLedger.style.background = "var(--primary-color)";
+            btnLedger.style.color = "#fff";
+            btnLive.classList.remove("active");
+            btnLive.style.background = "transparent";
+            btnLive.style.color = "var(--text-secondary)";
+        }
+    }
+
+    if (selectedAsset) {
+        updateChartDisplay();
+    }
+}
+
+function updateChartDisplay() {
+    if (!selectedAsset) return;
+    
+    if (chartMode === 'live') {
+        loadTradingViewChart(getSymbolForAsset(selectedAsset.name));
+    } else {
+        renderLedgerHistoryChart(selectedAsset.name);
+    }
+}
+
 // Load TradingView chart
 function loadTradingViewChart(symbol) {
     const container = document.getElementById("tradingview-chart-div");
@@ -1735,6 +1776,142 @@ function loadTradingViewChart(symbol) {
     } catch (e) {
         container.innerHTML = `<div class="tv-placeholder">Chart unavailable: ${symbol}</div>`;
     }
+}
+
+// Render historical position plot
+function renderLedgerHistoryChart(assetName) {
+    const container = document.getElementById("tradingview-chart-div");
+    container.innerHTML = "";
+
+    const keys = Object.keys(allHistory);
+    const sortedDays = keys
+        .map(key => ({ key, value: allHistory[key] }))
+        .sort((a, b) => getParsedDate(a.key, a.value).getTime() - getParsedDate(b.key, b.value).getTime());
+    
+    const dataPoints = [];
+    
+    sortedDays.forEach(day => {
+        let foundAsset = null;
+        for (const [catName, assets] of Object.entries(day.value.categories || {})) {
+            const found = assets.find(a => a.name.toLowerCase() === assetName.toLowerCase());
+            if (found) {
+                foundAsset = found;
+                break;
+            }
+        }
+        
+        if (foundAsset) {
+            let size = 0;
+            const sizeStr = foundAsset.size || "0%";
+            try {
+                size = parseFloat(sizeStr.replace('%', ''));
+            } catch(e) {}
+            
+            dataPoints.push({
+                dateLabel: day.value.date || day.key,
+                position: foundAsset.position,
+                size: size,
+                rawSize: sizeStr,
+                type: getTypeForPosition(foundAsset.position)
+            });
+        }
+    });
+
+    if (dataPoints.length === 0) {
+        container.innerHTML = `<div class="tv-placeholder">No history found for ${assetName}</div>`;
+        return;
+    }
+
+    const width = container.clientWidth || 550;
+    const height = container.clientHeight || 300;
+    const paddingLeft = 45;
+    const paddingRight = 20;
+    const paddingTop = 30;
+    const paddingBottom = 45;
+    
+    const chartWidth = width - paddingLeft - paddingRight;
+    const chartHeight = height - paddingTop - paddingBottom;
+    
+    const maxVal = Math.max(...dataPoints.map(d => d.size), 10);
+    const yMax = Math.ceil(maxVal / 10) * 10; 
+
+    let svgContent = `<svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" style="background: #0d1117; font-family: sans-serif; border-radius: 8px; border: 1px solid var(--border-color);">`;
+    
+    // SVG Gradients
+    svgContent += `
+        <defs>
+            <linearGradient id="area-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="var(--primary-color)" stop-opacity="0.3" />
+                <stop offset="100%" stop-color="var(--primary-color)" stop-opacity="0" />
+            </linearGradient>
+        </defs>
+    `;
+
+    // Grid lines (y axis)
+    const gridCount = 4;
+    for (let i = 0; i <= gridCount; i++) {
+        const yVal = (yMax / gridCount) * i;
+        const yPos = height - paddingBottom - (yVal / yMax) * chartHeight;
+        svgContent += `
+            <line x1="${paddingLeft}" y1="${yPos}" x2="${width - paddingRight}" y2="${yPos}" stroke="#21262d" stroke-dasharray="3,3" stroke-width="1" />
+            <text x="${paddingLeft - 8}" y="${yPos + 3}" fill="#8b949e" font-size="9" text-anchor="end">${yVal}%</text>
+        `;
+    }
+
+    // Plot data points
+    let pointsStr = "";
+    let dotsSvg = "";
+    
+    dataPoints.forEach((dp, idx) => {
+        const xPos = paddingLeft + (idx / (dataPoints.length - 1 || 1)) * chartWidth;
+        const yPos = height - paddingBottom - (dp.size / yMax) * chartHeight;
+        
+        pointsStr += `${xPos},${yPos} `;
+        
+        let dotColor = "var(--color-success)"; 
+        if (dp.type === "short") dotColor = "#ff7b72"; 
+        if (dp.position.toLowerCase().includes("hedge") || dp.position.toLowerCase().includes("collar") || dp.position.toLowerCase().includes("protective")) {
+            dotColor = "#d29922"; 
+        }
+        
+        dotsSvg += `
+            <g>
+                <circle cx="${xPos}" cy="${yPos}" r="4" fill="${dotColor}" stroke="#0d1117" stroke-width="1.5"></circle>
+                <circle cx="${xPos}" cy="${yPos}" r="8" fill="${dotColor}" fill-opacity="0" style="cursor: pointer;">
+                    <title>${dp.dateLabel}\nPosition: ${dp.position}\nSizing: ${dp.rawSize}</title>
+                </circle>
+            </g>
+        `;
+    });
+
+    let areaPointsStr = `${paddingLeft},${height - paddingBottom} ` + pointsStr + `${paddingLeft + chartWidth},${height - paddingBottom}`;
+    svgContent += `
+        <polygon points="${areaPointsStr}" fill="url(#area-grad)" />
+    `;
+    
+    svgContent += `
+        <polyline points="${pointsStr}" fill="none" stroke="var(--primary-color)" stroke-width="2" />
+    `;
+    
+    svgContent += dotsSvg;
+
+    // Draw X-Axis labels
+    const labelStep = Math.max(1, Math.ceil(dataPoints.length / 5));
+    dataPoints.forEach((dp, idx) => {
+        if (idx === 0 || idx === dataPoints.length - 1 || idx % labelStep === 0) {
+            const xPos = paddingLeft + (idx / (dataPoints.length - 1 || 1)) * chartWidth;
+            let shortDate = dp.dateLabel;
+            if (shortDate.includes(",")) {
+                shortDate = shortDate.split(",")[1].trim(); 
+            }
+            svgContent += `
+                <text x="${xPos}" y="${height - paddingBottom + 18}" fill="#8b949e" font-size="8" text-anchor="middle" transform="rotate(-15, ${xPos}, ${height - paddingBottom + 18})">${shortDate}</text>
+            `;
+        }
+    });
+
+    svgContent += `</svg>`;
+    container.innerHTML = svgContent;
 }
 
 // Update Active timeline day
