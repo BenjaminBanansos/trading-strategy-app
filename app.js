@@ -3090,134 +3090,44 @@ function drawMasterStudyChart(trade) {
     container.innerHTML = "";
 
     const assetName = trade.assetName;
-    const keys = Object.keys(allHistory);
-    const sortedDays = keys
-        .map(key => ({ key, value: allHistory[key] }))
-        .sort((a, b) => getParsedDate(a.key, a.value).getTime() - getParsedDate(b.key, b.value).getTime());
+    const symbol = getSymbolForAsset(assetName);
+    const mapped = mapTickerToTVSymbol(symbol);
     
-    const dataPoints = [];
+    // Map active asset to corresponding TradingView Layout ID
+    let layoutKey = "";
+    const nameLower = assetName.toLowerCase();
     
-    sortedDays.forEach(day => {
-        let foundAsset = null;
-        for (const [catName, assets] of Object.entries(day.value.categories || {})) {
-            const found = assets.find(a => a.name.toLowerCase() === assetName.toLowerCase());
-            if (found) {
-                foundAsset = found;
-                break;
-            }
-        }
-        
-        if (foundAsset) {
-            let size = 0;
-            const sizeStr = foundAsset.size || "0%";
-            try {
-                size = parseFloat(sizeStr.replace('%', ''));
-            } catch(e) {}
-            
-            const price = extractPriceFromPosition(foundAsset.position);
-            dataPoints.push({
-                dateLabel: day.value.date || day.key,
-                position: foundAsset.position,
-                size: size,
-                rawSize: sizeStr,
-                price: price,
-                type: getTypeForPosition(foundAsset.position)
-            });
-        }
-    });
-
-    if (dataPoints.length === 0) {
-        container.innerHTML = `<div class="tv-placeholder">No history for ${assetName}</div>`;
-        return;
+    if (nameLower.includes("gold") || nameLower.includes("silver") || nameLower.includes("copper") || nameLower.includes("ura") || nameLower.includes("lit")) {
+        layoutKey = "bFnbnA5G";
+    } else if (nameLower.includes("gbpusd") || nameLower.includes("eurusd") || nameLower.includes("usdzar") || nameLower.includes("dxy") || nameLower.includes("usdx")) {
+        layoutKey = "VxjU5i37";
+    } else if (nameLower.includes("nasdaq") || nameLower.includes("spx") || nameLower.includes("ger30") || nameLower.includes("ger40") || nameLower.includes("dax")) {
+        layoutKey = "3HVy3P4P";
+    } else if (nameLower.includes("bitcoin") || nameLower.includes("btc") || nameLower.includes("eth") || nameLower.includes("sol") || nameLower.includes("xrp")) {
+        layoutKey = "4YcTkeFE";
+    } else if (nameLower.includes("gas") || nameLower.includes("natgas") || nameLower.includes("ngas") || nameLower.includes("wti") || nameLower.includes("oil")) {
+        layoutKey = "7IIPnrJQ";
+    } else if (nameLower.includes("wheat") || nameLower.includes("cocoa") || nameLower.includes("cotton") || nameLower.includes("soyb")) {
+        layoutKey = "B6gleUYJ";
+    } else {
+        layoutKey = "1R3q21aM";
     }
 
-    // Interpolate prices
-    let lastKnownPrice = null;
-    for (let i = 0; i < dataPoints.length; i++) {
-        if (dataPoints[i].price !== null) {
-            lastKnownPrice = dataPoints[i].price;
-        } else if (lastKnownPrice !== null) {
-            dataPoints[i].price = lastKnownPrice;
-        }
-    }
-    let firstKnownPrice = null;
-    for (let i = dataPoints.length - 1; i >= 0; i--) {
-        if (dataPoints[i].price !== null) {
-            firstKnownPrice = dataPoints[i].price;
-        } else if (firstKnownPrice !== null && dataPoints[i].price === null) {
-            dataPoints[i].price = firstKnownPrice;
-        }
-    }
-    dataPoints.forEach(dp => {
-        if (dp.price === null) dp.price = 100;
-    });
-
-    const width = container.clientWidth || 350;
-    const height = container.clientHeight || 200;
-    const paddingLeft = 35;
-    const paddingRight = 45;
-    const paddingTop = 20;
-    const paddingBottom = 30;
-    
-    const chartWidth = width - paddingLeft - paddingRight;
-    const chartHeight = height - paddingTop - paddingBottom;
-
-    // Y Price boundaries
-    const prices = dataPoints.map(d => d.price);
-    const maxPrice = Math.max(...prices);
-    const minPrice = Math.min(...prices);
-    const priceRange = maxPrice - minPrice || 1;
-    const priceMinScale = minPrice - priceRange * 0.1;
-    const priceMaxScale = maxPrice + priceRange * 0.1;
-    const priceScaleRange = priceMaxScale - priceMinScale || 1;
-
-    let svgContent = `<svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" style="background: #0d1117; font-family: sans-serif;">`;
-
-    // Horizontal grid lines
-    const gridCount = 3;
-    for (let i = 0; i <= gridCount; i++) {
-        const yPos = height - paddingBottom - (i / gridCount) * chartHeight;
-        svgContent += `<line x1="${paddingLeft}" y1="${yPos}" x2="${width - paddingRight}" y2="${yPos}" stroke="#21262d" stroke-dasharray="2,2" />`;
-        
-        const yValPrice = priceMinScale + (priceScaleRange / gridCount) * i;
-        let label = yValPrice.toFixed(1);
-        if (yValPrice >= 1000) label = (yValPrice / 1000).toFixed(1) + "k";
-        if (assetName.toLowerCase().includes("gas") || assetName.toLowerCase().includes("ngas")) label = yValPrice.toFixed(3);
-        
-        svgContent += `<text x="${width - paddingRight + 5}" y="${yPos + 3}" fill="#8b949e" font-size="8" text-anchor="start">${label}</text>`;
-    }
-
-    // Plot Price Line
-    let pricePointsStr = "";
-    let highlightedX = null;
-    let highlightedY = null;
-    
-    dataPoints.forEach((dp, idx) => {
-        const xPos = paddingLeft + (idx / (dataPoints.length - 1 || 1)) * chartWidth;
-        const yPosPrice = height - paddingBottom - ((dp.price - priceMinScale) / priceScaleRange) * chartHeight;
-        pricePointsStr += `${xPos},${yPosPrice} `;
-        
-        // Find if this datapoint matches the selected trade date
-        if (dp.dateLabel === trade.date) {
-            highlightedX = xPos;
-            highlightedY = yPosPrice;
-        }
-    });
-
-    svgContent += `<polyline points="${pricePointsStr}" fill="none" stroke="#00bcd4" stroke-width="2" />`;
-
-    // Draw locator crosshair if found
-    if (highlightedX !== null && highlightedY !== null) {
-        svgContent += `
-            <line x1="${highlightedX}" y1="${paddingTop}" x2="${highlightedX}" y2="${height - paddingBottom}" stroke="rgba(56, 139, 253, 0.4)" stroke-dasharray="3,3" />
-            <line x1="${paddingLeft}" y1="${highlightedY}" x2="${width - paddingRight}" y2="${highlightedY}" stroke="rgba(56, 139, 253, 0.4)" stroke-dasharray="3,3" />
-            <circle cx="${highlightedX}" cy="${highlightedY}" r="6" fill="var(--primary-color)" stroke="#fff" stroke-width="1.5" />
-            <circle cx="${highlightedX}" cy="${highlightedY}" r="12" fill="var(--primary-color)" fill-opacity="0.2">
-                <animate attributeName="r" values="6;16;6" dur="2s" repeatCount="indefinite"/>
-            </circle>
+    try {
+        container.innerHTML = `
+            <iframe 
+                src="https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(mapped)}&theme=dark&style=1&timezone=Etc%2FUTC&layout=${layoutKey}&interval=D&locale=en" 
+                style="width: 100%; height: 100%; border: none; background: #0d1117;"
+                allowfullscreen>
+            </iframe>
+            <!-- Open Full Layout badge link -->
+            <div style="position: absolute; bottom: 8px; right: 8px; z-index: 10; background: rgba(13, 17, 23, 0.85); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 4px;">
+                <a href="https://www.tradingview.com/chart/${layoutKey}/" target="_blank" style="color: #00bcd4; font-size: 0.65rem; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-up-right-from-square"></i> Open Full Layout
+                </a>
+            </div>
         `;
+    } catch (e) {
+        container.innerHTML = `<div class="tv-placeholder">Live Chart unavailable: ${symbol}</div>`;
     }
-
-    svgContent += `</svg>`;
-    container.innerHTML = svgContent;
 }
