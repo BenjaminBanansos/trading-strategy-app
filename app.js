@@ -896,23 +896,31 @@ function switchView(viewName) {
     const course1 = document.getElementById("course1-view");
     const course2 = document.getElementById("course2-view");
     const course3 = document.getElementById("course3-view");
+    const journal = document.getElementById("journal-view");
     
     // Hide all
     dashboard.style.display = "none";
     course1.style.display = "none";
     course2.style.display = "none";
     course3.style.display = "none";
+    if (journal) journal.style.display = "none";
 
     // Deactivate all buttons
     document.getElementById("tab-dashboard").classList.remove("active");
     document.getElementById("tab-course1").classList.remove("active");
     document.getElementById("tab-course2").classList.remove("active");
     document.getElementById("tab-course3").classList.remove("active");
+    const tabJournal = document.getElementById("tab-journal");
+    if (tabJournal) tabJournal.classList.remove("active");
 
     // Show selected and load course
     if (viewName === "dashboard") {
         dashboard.style.display = "block";
         document.getElementById("tab-dashboard").classList.add("active");
+    } else if (viewName === "journal") {
+        if (journal) journal.style.display = "block";
+        if (tabJournal) tabJournal.classList.add("active");
+        selectJournalCategory('metals'); // Default
     } else if (viewName === "course1") {
         course1.style.display = "block";
         document.getElementById("tab-course1").classList.add("active");
@@ -2007,4 +2015,455 @@ if (typeof window === 'undefined') {
             handleFileUpload(e);
         };
     };
+}
+
+// AI Pattern Journal configuration and functions
+const journalCategories = {
+    metals: {
+        name: "Gold & Silver Journal",
+        badge: "Short & Long Setups",
+        badgeClass: "hedged",
+        indicators: "Bollinger Bands, Stochastic (14,7,3), Weekly range boundaries",
+        rr: "1:2.5 (Gold 50% Bottom Conviction)",
+        levels: "Resistance Sweep 5277, Support Sweep 4667",
+        explanation: "Gold was shorted at the weekly range extreme (5277) on high stochastic overbought sweeps. Later, a major bottom conviction long was scaled in at 4667 following an hourly stochastic wash (<15) and hourly hammer close. Hedges were systematically deployed (SBE stop moved to entry) once the position gained 1.5R.",
+        checklist: [
+            "Weekly trend set direction on Weekly chart.",
+            "Hourly pullback swept 200-hour Bollinger Band.",
+            "Stochastics confirmed oversold (<20) / overbought (>80).",
+            "Stop-Breakeven (SBE) set once price gained 1.5R."
+        ],
+        chartSetup: "metals"
+    },
+    crypto: {
+        name: "Bitcoin & Altcoins Journal",
+        badge: "Staggered Risk-Lock",
+        badgeClass: "long",
+        indicators: "Staggered Stop Levels, Bollinger Bands, Moving Averages",
+        rr: "1:3.0 (Wick Sweep Protection)",
+        levels: "BTC Long Entry 91200, 75950. Stop-Hedges at 89300, 86900, 85900",
+        explanation: "Cryptocurrency positions are highly volatile, meaning standard stop-losses are vulnerable to 'wick sweeps' (rapid market spikes designed to liquidate retail stops). To mitigate this, positions are protected by staggered hedge levels (e.g. 1/3 at 89.3k, 1/3 at 86.9k, 1/3 at 85.9k). This preserves the core position if the market experiences temporary volatility.",
+        checklist: [
+            "Core position entered during consolidation pullback.",
+            "Downside protection split into three staggered tiers.",
+            "Scale-in added only at major weekly structural zones.",
+            "Hedges shifted to SBE to lock in risk-free exposure."
+        ],
+        chartSetup: "crypto"
+    },
+    stocks: {
+        name: "Conviction Stocks Journal",
+        badge: "Options Collar Collar",
+        badgeClass: "hedged",
+        indicators: "Protective Put Strike Floor, Options Collars, 50-day EMA",
+        rr: "1:4.0 (Asymmetrical Payoff)",
+        levels: "COIN Long 256.30 (Collar 192), MSTR Long 235 (Collar 200)",
+        explanation: "For high-conviction tech stocks (COIN, MSTR, NVDA), the trader bypassed standard stops by buying protective puts. This put collar acts as a hard floor, limiting the maximum capital risk unit to 1.5% of equity. This safety floor enabled position sizing of 100% to 110%, resulting in massive asymmetrical gains when MSTR rallied to 450 and COIN to 350.",
+        checklist: [
+            "Conviction asset selected (high beta/correlation).",
+            "Protective put options purchased at key structural support strike.",
+            "Position size scaled up to 100%+ due to bounded option risk.",
+            "Trimmed 30-50% on Friday closes to avoid weekend gap risk."
+        ],
+        chartSetup: "stocks"
+    },
+    energies: {
+        name: "Natural Gas & Crude Journal",
+        badge: "Triple Wick Rejection",
+        badgeClass: "long",
+        indicators: "Triple Wick Support, COT Index, Weather Feeds",
+        rr: "1:2.8 (Convex Bottom)",
+        levels: "NATGAS Long 2.575 (Hedge 2.54), Exit 2.91",
+        explanation: "Energies (Natural Gas) are traded using the Breakout-Pullback (BOPB) system. Bottoms are identified using Triple Wick Rejections on the hourly/4-hour chart (three successive lows with long lower wicks showing supply absorption). COT reports confirm extreme speculative net-shorts vs commercial buying. Hedges are activated lower to prevent slide wipeouts, and full size is taken once the bottom is locked.",
+        checklist: [
+            "Check EIA weekly inventory report and weather forecasts.",
+            "Verify COT speculator net-short extreme divergence.",
+            "Confirm Triple Wick Rejection on hourly/4hr charts.",
+            "Scale into long only at structural support with active hedge."
+        ],
+        chartSetup: "energies"
+    },
+    indices: {
+        name: "Stock Indices Journal",
+        badge: "Breakout-Pullback (BOPB)",
+        badgeClass: "long",
+        indicators: "Resistance Box, 200 SMA, Bollinger Band bounds",
+        rr: "1:2.0 (Trend Following)",
+        levels: "NASDAQ Long 25110 (Exit 25400), SPX500 Long 6866",
+        explanation: "Indices are traded using trend-following breakout-pullbacks. Price breaks out of a clear horizontal consolidation box, then pulls back to test the top of the box as support. Once a reversal candle prints on the hourly chart at the support line, long positions are opened. Stops are moved immediately to entry (SBE) to eliminate risk.",
+        checklist: [
+            "Identify clear horizontal resistance consolidation range.",
+            "Wait for a strong hourly close breakout above the range.",
+            "Enter at the retest pullback of the broken resistance line.",
+            "Shift stop to breakeven (SBE) at 1.5R target gains."
+        ],
+        chartSetup: "indices"
+    },
+    forex: {
+        name: "G7 Swing Forex Journal",
+        badge: "weekly Range Reversals",
+        badgeClass: "long",
+        indicators: "Weekly Candlesticks, Hourly 200 SMA, Bollinger Bands",
+        rr: "1:2.0 (Forex Swing)",
+        levels: "GBPUSD Long Entry 1.2540, EURUSD Range Trades",
+        explanation: "The G7 Forex Swing system sweeps weekly highs/lows of major currency pairs. Weekly candle sets the trend bias. Entries are triggered on the hourly chart when price sweeps the 200 Bollinger Band or 200 SMA, Stochastics confirm oversold (<20) or overbought (>80), and an hourly reversal candle (Hammer/Harami) closes.",
+        checklist: [
+            "Establish Weekly candle trend direction bias.",
+            "Set hourly alerts 10 pips beyond weekly high/low boundaries.",
+            "Verify hourly close at 100/200 Bollinger Band or 200 SMA.",
+            "Ensure Stochastic (14,7,3) is oversold (<20) or overbought (>80)."
+        ],
+        chartSetup: "forex"
+    },
+    softs: {
+        name: "Softs & Grains Journal",
+        badge: "Range Mean Reversion",
+        badgeClass: "short",
+        indicators: "Bollinger Bands, Stochastics, Trendline pivots",
+        rr: "1:2.0 (Commodity Swing)",
+        levels: "Wheat Consolidation, Cocoa Volatility Ranges",
+        explanation: "Soft commodities (Wheat, Soybeans, Cocoa, Cotton) are traded within well-defined agricultural range boundaries. Positions are sized small (10-20% average) and traded mean-reversion style between the daily Bollinger Band extremes. Entries are triggered only when supply/demand cycles hit extreme seasonal deviations.",
+        checklist: [
+            "Verify agricultural seasonality factors.",
+            "Confirm daily Bollinger Band extreme sweep.",
+            "Enter at range rotation candle with stop beyond the range high/low.",
+            "Trim size heavily if weekly COT shows speculative convergence."
+        ],
+        chartSetup: "softs"
+    }
+};
+
+function selectJournalCategory(catName) {
+    const journalInfo = journalCategories[catName];
+    if (!journalInfo) return;
+    
+    // Update active button state
+    document.querySelectorAll(".module-item").forEach(item => {
+        if (item.id === `journal-cat-${catName}`) {
+            item.classList.add("active");
+            item.style.background = "rgba(255,255,255,0.03)";
+            item.style.borderColor = "var(--border-color)";
+            item.style.color = "var(--text-primary)";
+        } else if (item.id && item.id.startsWith("journal-cat-")) {
+            item.classList.remove("active");
+            item.style.background = "transparent";
+            item.style.borderColor = "transparent";
+            item.style.color = "var(--text-secondary)";
+        }
+    });
+    
+    // Update texts
+    document.getElementById("journal-pattern-name").innerText = journalInfo.name;
+    
+    const badge = document.getElementById("journal-pattern-badge");
+    badge.innerText = journalInfo.badge;
+    badge.className = `chart-direction-badge ${journalInfo.badgeClass}`;
+    
+    document.getElementById("journal-stat-indicators").innerText = journalInfo.indicators;
+    document.getElementById("journal-stat-rr").innerText = journalInfo.rr;
+    document.getElementById("journal-stat-levels").innerText = journalInfo.levels;
+    document.getElementById("journal-strategy-explanation").innerText = journalInfo.explanation;
+    
+    // Populate checklist
+    const checklistContainer = document.getElementById("journal-strategy-checklist");
+    checklistContainer.innerHTML = "";
+    journalInfo.checklist.forEach(item => {
+        const li = document.createElement("li");
+        li.style.marginBottom = "0.25rem";
+        li.innerHTML = `<i class="fa-solid fa-check" style="color: var(--color-success); margin-right: 6px;"></i> ${item}`;
+        checklistContainer.appendChild(li);
+    });
+    
+    // Populate trade log table
+    populateJournalLedgerTable(catName);
+    
+    // Render 4H Chart
+    drawJournal4HChart(journalInfo.chartSetup);
+}
+
+function populateJournalLedgerTable(catName) {
+    const tbody = document.getElementById("journal-ledger-tbody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    
+    let targetCategories = [];
+    let targetAssetKeywords = [];
+    
+    if (catName === "metals") {
+        targetCategories = ["Metals"];
+        targetAssetKeywords = ["gold", "silver", "copper", "metals"];
+    } else if (catName === "crypto") {
+        targetCategories = ["Crypto"];
+        targetAssetKeywords = ["bitcoin", "btc", "eth", "ethereum", "sol", "solana", "xrp", "ripple"];
+    } else if (catName === "stocks") {
+        targetCategories = ["Stocks/ETF's"];
+        targetAssetKeywords = ["coin", "mstr", "tsla", "pltr", "nvda", "msft", "avgo", "googl", "crcl"];
+    } else if (catName === "energies") {
+        targetCategories = ["Energies"];
+        targetAssetKeywords = ["ngas", "natgas", "wti", "oil", "gas"];
+    } else if (catName === "indices") {
+        targetCategories = ["Stocks/ETF's", "Indices"];
+        targetAssetKeywords = ["nasdaq", "spx500", "ger30", "dax"];
+    } else if (catName === "forex") {
+        targetCategories = ["Currencies"];
+        targetAssetKeywords = ["gbpusd", "eurusd", "usd", "cad"];
+    } else if (catName === "softs") {
+        targetCategories = ["Commodities", "Softs"];
+        targetAssetKeywords = ["wheat", "cocoa", "cotton", "soyb"];
+    }
+    
+    const keys = Object.keys(allHistory);
+    const sortedDays = keys
+        .map(key => ({ key, value: allHistory[key] }))
+        .sort((a, b) => getParsedDate(a.key, a.value).getTime() - getParsedDate(b.key, b.value).getTime());
+        
+    const matchingTrades = [];
+    
+    sortedDays.forEach(day => {
+        const dateStr = day.value.date || day.key;
+        for (const [catTitle, assets] of Object.entries(day.value.categories || {})) {
+            const isCatMatch = targetCategories.some(tc => catTitle.toLowerCase().includes(tc.toLowerCase()) || tc.toLowerCase().includes(catTitle.toLowerCase()));
+            
+            assets.forEach(asset => {
+                const nameLower = asset.name.toLowerCase();
+                const isAssetMatch = targetAssetKeywords.some(keyword => nameLower.includes(keyword));
+                
+                if (isCatMatch || isAssetMatch) {
+                    matchingTrades.push({
+                        date: dateStr,
+                        name: asset.name,
+                        position: asset.position,
+                        size: asset.size
+                    });
+                }
+            });
+        }
+    });
+
+    if (matchingTrades.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 1rem; color: var(--text-muted);">No ledger entries found.</td></tr>`;
+        return;
+    }
+
+    const displayTrades = matchingTrades.slice(-30).reverse();
+    
+    displayTrades.forEach(t => {
+        const row = document.createElement("tr");
+        row.style.borderBottom = "1px solid rgba(255,255,255,0.03)";
+        
+        const type = getTypeForPosition(t.position);
+        let dotColor = "var(--color-success)";
+        if (type === "short") dotColor = "#ff7b72";
+        if (t.position.toLowerCase().includes("hedge") || t.position.toLowerCase().includes("collar") || t.position.toLowerCase().includes("protective")) {
+            dotColor = "#d29922";
+        }
+        
+        row.innerHTML = `
+            <td style="padding: 0.5rem; font-weight: 600;">${t.name}</td>
+            <td style="padding: 0.5rem; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:${dotColor}; margin-right:4px;"></span> ${t.position}</td>
+            <td style="padding: 0.5rem;">${t.size}</td>
+            <td style="padding: 0.5rem; color: var(--text-muted);">${t.date.split(",")[1]?.trim() || t.date}</td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+}
+
+function drawJournal4HChart(chartSetup) {
+    const container = document.getElementById("journal-pattern-chart-div");
+    if (!container) return;
+    container.innerHTML = "";
+    
+    const width = container.clientWidth || 550;
+    const height = container.clientHeight || 350;
+    
+    let svgContent = `<svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" style="background: #0d1117; font-family: sans-serif; border-radius: 8px; border: 1px solid var(--border-color);">`;
+    
+    for (let i = 1; i < 6; i++) {
+        const yPos = (height / 6) * i;
+        svgContent += `<line x1="10" y1="${yPos}" x2="${width - 10}" y2="${yPos}" stroke="#21262d" stroke-dasharray="2,2" />`;
+    }
+    
+    if (chartSetup === "metals") {
+        svgContent += `
+            <path d="M 10 100 Q 150 50, 300 120 T ${width-10} 80 L ${width-10} 240 Q 300 280, 150 180 T 10 220 Z" fill="rgba(56, 139, 253, 0.05)" />
+            <path d="M 10 100 Q 150 50, 300 120 T ${width-10} 80" fill="none" stroke="var(--primary-color)" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.6" />
+            <path d="M 10 220 Q 150 180, 300 280 T ${width-10} 240" fill="none" stroke="var(--primary-color)" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.6" />
+            
+            <g stroke="#ff7b72" stroke-width="1.5">
+                <line x1="50" y1="80" x2="50" y2="120" />
+                <line x1="90" y1="90" x2="90" y2="140" />
+                <line x1="130" y1="120" x2="130" y2="170" />
+            </g>
+            <g fill="#ff7b72">
+                <rect x="44" y="90" width="12" height="20" rx="2" />
+                <rect x="84" y="100" width="12" height="30" rx="2" />
+                <rect x="124" y="130" width="12" height="30" rx="2" />
+            </g>
+            
+            <g stroke="var(--color-success)" stroke-width="1.5">
+                <line x1="170" y1="150" x2="170" y2="245" />
+            </g>
+            <rect x="164" y="150" width="12" height="15" fill="var(--color-success)" rx="2" />
+            <circle cx="170" cy="240" r="14" fill="none" stroke="var(--color-success)" stroke-dasharray="2,2" />
+            <text x="190" y="244" fill="var(--color-success)" font-size="10" font-weight="600">Hammer at Support (4667)</text>
+            
+            <g stroke="var(--color-success)" stroke-width="1.5">
+                <line x1="210" y1="130" x2="210" y2="160" />
+                <line x1="250" y1="110" x2="250" y2="140" />
+                <line x1="290" y1="90" x2="290" y2="120" />
+            </g>
+            <g fill="var(--color-success)">
+                <rect x="204" y="135" width="12" height="20" rx="2" />
+                <rect x="244" y="115" width="12" height="20" rx="2" />
+                <rect x="284" y="95" width="12" height="20" rx="2" />
+            </g>
+            
+            <g stroke="#ff7b72" stroke-width="1.5">
+                <line x1="330" y1="45" x2="330" y2="100" />
+            </g>
+            <rect x="324" y="80" width="12" height="15" fill="#ff7b72" rx="2" />
+            <circle cx="330" cy="50" r="14" fill="none" stroke="#ff7b72" stroke-dasharray="2,2" />
+            <text x="350" y="54" fill="#ff7b72" font-size="10" font-weight="600">Shooting Star at Resistance (5277)</text>
+            
+            <rect x="10" y="275" width="${width-20}" height="60" fill="rgba(255,255,255,0.01)" stroke="#21262d" />
+            <line x1="10" y1="287" x2="${width-10}" y2="287" stroke="rgba(239,68,68,0.3)" stroke-dasharray="2,2" />
+            <line x1="10" y1="323" x2="${width-10}" y2="323" stroke="rgba(86,211,100,0.3)" stroke-dasharray="2,2" />
+            <text x="15" y="284" fill="#8b949e" font-size="7">Stoch 80</text>
+            <text x="15" y="331" fill="#8b949e" font-size="7">Stoch 20</text>
+            <path d="M 10 295 C 100 280, 150 335, 170 330 T 250 290 T 330 282" fill="none" stroke="var(--primary-color)" stroke-width="1.5" />
+            <path d="M 10 300 C 100 285, 150 330, 170 327 T 250 292 T 330 284" fill="none" stroke="#d29922" stroke-width="1" />
+        `;
+    } else if (chartSetup === "crypto") {
+        svgContent += `
+            <line x1="10" y1="100" x2="${width-10}" y2="100" stroke="#d29922" stroke-width="1.5" stroke-dasharray="5,5" />
+            <text x="15" y="94" fill="#d29922" font-size="9" font-weight="600">Bitcoin Core Entry: 91,200</text>
+            
+            <line x1="10" y1="140" x2="${width-10}" y2="140" stroke="#ff7b72" stroke-width="1.2" stroke-dasharray="3,3" />
+            <text x="15" y="134" fill="#ff7b72" font-size="8">Tier 1 Hedge (1/3 size): 89,300</text>
+            
+            <line x1="10" y1="180" x2="${width-10}" y2="180" stroke="#ff7b72" stroke-width="1.2" stroke-dasharray="3,3" />
+            <text x="15" y="174" fill="#ff7b72" font-size="8">Tier 2 Hedge (1/3 size): 86,900</text>
+            
+            <line x1="10" y1="210" x2="${width-10}" y2="210" stroke="#ff7b72" stroke-width="1.2" stroke-dasharray="3,3" />
+            <text x="15" y="204" fill="#ff7b72" font-size="8">Tier 3 Hedge (13.3% size): 85,900</text>
+            
+            <path d="M 30 110 L 80 85 L 140 135 L 200 95 L 260 148 L 320 110 L 380 70 L 440 60" fill="none" stroke="#8b949e" stroke-width="2" />
+            <line x1="260" y1="148" x2="260" y2="175" stroke="#ff7b72" stroke-width="1" />
+            <circle cx="260" cy="140" r="5" fill="#ff7b72" />
+            <text x="270" y="143" fill="#ff7b72" font-size="8" font-weight="600">Tier 1 Hedge Triggered</text>
+            
+            <line x1="10" y1="60" x2="${width-10}" y2="60" stroke="var(--color-success)" stroke-width="1.5" />
+            <text x="15" y="54" fill="var(--color-success)" font-size="9" font-weight="600">Stop-Breakeven (SBE) active: 91,200 (Risk Free)</text>
+        `;
+    } else if (chartSetup === "stocks") {
+        svgContent += `
+            <line x1="10" y1="150" x2="${width-10}" y2="150" stroke="var(--primary-color)" stroke-width="2" />
+            <text x="15" y="142" fill="var(--primary-color)" font-size="10" font-weight="600">COIN Long Entry: 256.30</text>
+            
+            <rect x="10" y="150" width="${width-20}" height="100" fill="rgba(239, 68, 68, 0.05)" />
+            
+            <rect x="10" y="250" width="${width-20}" height="6" fill="#ff7b72" />
+            <text x="15" y="242" fill="#ff7b72" font-size="10" font-weight="600">Protective Put Option Strike Floor: 192.00</text>
+            <text x="15" y="270" fill="#ff7b72" font-size="8">Maximum Loss is strictly locked to 1.5% of total capital</text>
+            
+            <path d="M 30 150 C 100 160, 160 210, 200 180 C 250 140, 320 80, 420 50" fill="none" stroke="var(--color-success)" stroke-width="3" />
+            <circle cx="420" cy="50" r="5" fill="var(--color-success)" />
+            <text x="430" y="54" fill="var(--color-success)" font-size="10" font-weight="600">Momentum Profit Target: 350.00</text>
+            
+            <g transform="translate(${width-120}, 90)">
+                <rect x="0" y="0" width="100" height="40" rx="6" fill="rgba(56, 139, 253, 0.1)" stroke="var(--primary-color)" stroke-width="1" />
+                <text x="50" y="24" fill="var(--primary-color)" font-size="12" font-weight="700" text-anchor="middle">100% SIZE</text>
+            </g>
+        `;
+    } else if (chartSetup === "energies") {
+        svgContent += `
+            <line x1="10" y1="220" x2="${width-10}" y2="220" stroke="#f0883e" stroke-width="2" />
+            <text x="15" y="212" fill="#f0883e" font-size="10" font-weight="600">Key Support Level: 2.575</text>
+            
+            <g stroke="#ff7b72" stroke-width="1.5">
+                <line x1="50" y1="100" x2="50" y2="150" />
+                <line x1="90" y1="120" x2="90" y2="180" />
+            </g>
+            <g fill="#ff7b72">
+                <rect x="44" y="110" width="12" height="30" rx="2" />
+                <rect x="84" y="130" width="12" height="40" rx="2" />
+            </g>
+            
+            <line x1="140" y1="160" x2="140" y2="235" stroke="#ff7b72" stroke-width="1.5" />
+            <rect x="134" y="160" width="12" height="20" fill="#ff7b72" rx="2" />
+            <circle cx="140" cy="220" r="10" fill="none" stroke="#d29922" />
+            
+            <line x1="190" y1="170" x2="190" y2="238" stroke="#ff7b72" stroke-width="1.5" />
+            <rect x="184" y="170" width="12" height="15" fill="#ff7b72" rx="2" />
+            <circle cx="190" cy="220" r="10" fill="none" stroke="#d29922" />
+            
+            <line x1="240" y1="170" x2="240" y2="240" stroke="var(--color-success)" stroke-width="1.5" />
+            <rect x="234" y="170" width="12" height="15" fill="var(--color-success)" rx="2" />
+            <circle cx="240" cy="220" r="10" fill="none" stroke="#d29922" />
+            
+            <text x="130" y="260" fill="#d29922" font-size="9" font-weight="600">Triple Wick Rejection (Supply Absorption)</text>
+            
+            <path d="M 240 170 C 280 140, 320 100, 380 60" fill="none" stroke="var(--color-success)" stroke-width="3" />
+            <circle cx="380" cy="60" r="5" fill="var(--color-success)" />
+            <text x="390" y="64" fill="var(--color-success)" font-size="10" font-weight="600">Hedge Target: 2.91</text>
+        `;
+    } else if (chartSetup === "indices") {
+        svgContent += `
+            <rect x="10" y="140" width="${width-20}" height="40" fill="rgba(56, 139, 253, 0.05)" stroke="#21262d" />
+            <text x="15" y="132" fill="#8b949e" font-size="9">Horizontal Resistance Box Range</text>
+            
+            <path d="M 30 160 Q 100 150, 160 160 T 220 100 T 280 138 T 380 50" fill="none" stroke="#8b949e" stroke-width="2" />
+            
+            <circle cx="220" cy="100" r="12" fill="none" stroke="var(--primary-color)" stroke-dasharray="2,2" />
+            <text x="200" y="80" fill="var(--primary-color)" font-size="9" font-weight="600">1. Breakout</text>
+            
+            <circle cx="280" cy="138" r="12" fill="none" stroke="var(--color-success)" stroke-dasharray="2,2" />
+            <text x="250" y="160" fill="var(--color-success)" font-size="9" font-weight="600">2. Pullback & Retest</text>
+            
+            <path d="M 280 170 L 280 148 M 274 154 L 280 148 L 286 154" fill="none" stroke="var(--color-success)" stroke-width="2.5" />
+            <text x="300" y="142" fill="var(--color-success)" font-size="10" font-weight="700">Long Entry at Close</text>
+        `;
+    } else if (chartSetup === "forex") {
+        svgContent += `
+            <path d="M 10 180 Q 150 150, 300 200 T ${width-10} 170" fill="none" stroke="var(--primary-color)" stroke-width="2.5" />
+            <text x="20" y="165" fill="var(--primary-color)" font-size="9" font-weight="600">200 SMA Dynamic Support</text>
+            
+            <path d="M 20 80 L 100 110 L 180 178 L 250 130 L 340 70" fill="none" stroke="#8b949e" stroke-width="2" />
+            
+            <circle cx="180" cy="178" r="14" fill="none" stroke="var(--color-success)" stroke-dasharray="2,2" />
+            <text x="140" y="210" fill="var(--color-success)" font-size="9" font-weight="600">Hourly Reversal Candle close on SMA</text>
+            
+            <rect x="10" y="275" width="${width-20}" height="60" fill="rgba(255,255,255,0.01)" stroke="#21262d" />
+            <line x1="10" y1="287" x2="${width-10}" y2="287" stroke="rgba(239,68,68,0.3)" stroke-dasharray="2,2" />
+            <line x1="10" y1="323" x2="${width-10}" y2="323" stroke="rgba(86,211,100,0.3)" stroke-dasharray="2,2" />
+            
+            <path d="M 10 290 Q 100 280, 180 327 T 280 290" fill="none" stroke="var(--primary-color)" stroke-width="1.5" />
+            <path d="M 10 293 Q 100 285, 180 325 T 280 292" fill="none" stroke="#d29922" stroke-width="1" />
+            <circle cx="180" cy="326" r="6" fill="none" stroke="var(--color-success)" />
+            <text x="200" y="331" fill="var(--color-success)" font-size="8">Stochastic Wash < 20</text>
+        `;
+    } else if (chartSetup === "softs") {
+        svgContent += `
+            <line x1="10" y1="80" x2="${width-10}" y2="120" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="4,4" />
+            <text x="15" y="74" fill="#8b949e" font-size="9">Upper Channel Resistance</text>
+            
+            <line x1="10" y1="220" x2="${width-10}" y2="260" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="4,4" />
+            <text x="15" y="244" fill="#8b949e" font-size="9">Lower Channel Support</text>
+            
+            <path d="M 30 150 L 100 95 L 180 230 L 260 110 L 340 248 L 420 130" fill="none" stroke="#d29922" stroke-width="2" />
+            
+            <circle cx="100" cy="95" r="8" fill="none" stroke="#ff7b72" />
+            <text x="100" y="80" fill="#ff7b72" font-size="8" text-anchor="middle">Sell</text>
+            
+            <circle cx="180" cy="230" r="8" fill="none" stroke="var(--color-success)" />
+            <text x="180" y="248" fill="var(--color-success)" font-size="8" text-anchor="middle">Buy</text>
+            
+            <circle cx="260" cy="110" r="8" fill="none" stroke="#ff7b72" />
+            <text x="260" y="95" fill="#ff7b72" font-size="8" text-anchor="middle">Sell</text>
+        `;
+    }
+    
+    svgContent += `</svg>`;
+    container.innerHTML = svgContent;
 }

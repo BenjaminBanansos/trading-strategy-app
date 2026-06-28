@@ -107,6 +107,9 @@
                 <button class="nav-tab active" onclick="switchView('dashboard')" id="tab-dashboard">
                     <i class="fa-solid fa-chart-line"></i> Strategy Dashboard
                 </button>
+                <button class="nav-tab" onclick="switchView('journal')" id="tab-journal">
+                    <i class="fa-solid fa-book-bookmark"></i> AI Pattern Journal
+                </button>
                 <button class="nav-tab" onclick="switchView('course1')" id="tab-course1">
                     <i class="fa-solid fa-shield-halved"></i> Course 1: Grown-Up Rules
                 </button>
@@ -306,6 +309,107 @@
 
                     </div>
 
+                </div>
+            </div>
+
+            <!-- AI Pattern Journal View -->
+            <div id="journal-view" style="display: none;">
+                <div class="academy-container" style="display: grid; grid-template-columns: 240px 1fr; gap: 1.5rem; min-height: 600px;">
+                    <!-- Left Sidebar: Categories selection -->
+                    <aside class="academy-sidebar" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                        <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);"><i class="fa-solid fa-folder-open"></i> Asset Journals</h3>
+                        <div class="module-list" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 500px; overflow-y: auto;">
+                            <button class="module-item active" onclick="selectJournalCategory('metals')" id="journal-cat-metals" style="width: 100%; text-align: left; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 0.75rem; border-radius: 8px; color: var(--text-primary); font-size: 0.8rem; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s ease;">
+                                <i class="fa-solid fa-coins" style="color: #ffd700;"></i> Metals (Gold/Silver)
+                            </button>
+                            <button class="module-item" onclick="selectJournalCategory('crypto')" id="journal-cat-crypto" style="width: 100%; text-align: left; background: transparent; border: 1px solid transparent; padding: 0.75rem; border-radius: 8px; color: var(--text-secondary); font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s ease;">
+                                <i class="fa-brands fa-bitcoin" style="color: #f7931a;"></i> Crypto (BTC/SOL)
+                            </button>
+                            <button class="module-item" onclick="selectJournalCategory('stocks')" id="journal-cat-stocks" style="width: 100%; text-align: left; background: transparent; border: 1px solid transparent; padding: 0.75rem; border-radius: 8px; color: var(--text-secondary); font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s ease;">
+                                <i class="fa-solid fa-chart-line-up" style="color: var(--primary-color);"></i> Conviction Stocks
+                            </button>
+                            <button class="module-item" onclick="selectJournalCategory('energies')" id="journal-cat-energies" style="width: 100%; text-align: left; background: transparent; border: 1px solid transparent; padding: 0.75rem; border-radius: 8px; color: var(--text-secondary); font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s ease;">
+                                <i class="fa-solid fa-fire" style="color: #ff5722;"></i> Energies (NATGAS/WTI)
+                            </button>
+                            <button class="module-item" onclick="selectJournalCategory('indices')" id="journal-cat-indices" style="width: 100%; text-align: left; background: transparent; border: 1px solid transparent; padding: 0.75rem; border-radius: 8px; color: var(--text-secondary); font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s ease;">
+                                <i class="fa-solid fa-chart-area" style="color: #00bcd4;"></i> Indices (NASDAQ/SPX)
+                            </button>
+                            <button class="module-item" onclick="selectJournalCategory('forex')" id="journal-cat-forex" style="width: 100%; text-align: left; background: transparent; border: 1px solid transparent; padding: 0.75rem; border-radius: 8px; color: var(--text-secondary); font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s ease;">
+                                <i class="fa-solid fa-sterling-sign" style="color: #4caf50;"></i> Forex (GBPUSD/EURUSD)
+                            </button>
+                            <button class="module-item" onclick="selectJournalCategory('softs')" id="journal-cat-softs" style="width: 100%; text-align: left; background: transparent; border: 1px solid transparent; padding: 0.75rem; border-radius: 8px; color: var(--text-secondary); font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s ease;">
+                                <i class="fa-solid fa-wheat-awn" style="color: #ffc107;"></i> Softs & Grains
+                            </button>
+                        </div>
+                    </aside>
+
+                    <!-- Right Area: Chart and Journal details -->
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <!-- Chart Card -->
+                        <section class="chart-panel" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem;">
+                            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; width: 100%;">
+                                <div class="chart-ticker-info">
+                                    <span class="chart-ticker-name" id="journal-pattern-name">G7 Weekly Resistance Sweep</span>
+                                    <span class="chart-direction-badge Short" id="journal-pattern-badge" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">Short Setup</span>
+                                </div>
+                                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;"><i class="fa-solid fa-clock"></i> 4-Hour Timeframe Analysis</span>
+                            </div>
+                            
+                            <!-- Custom 4H SVG Chart Container -->
+                            <div class="chart-container-outer" style="height: 360px; background: #0d1117; border-radius: 8px; border: 1px solid var(--border-color); padding: 0.5rem; display: flex; justify-content: center; align-items: center;">
+                                <div id="journal-pattern-chart-div" style="width: 100%; height: 100%;"></div>
+                            </div>
+
+                            <!-- Details Grid -->
+                            <div class="details-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem;">
+                                <div class="detail-card">
+                                    <span class="detail-card-label">Primary Indicators</span>
+                                    <span class="detail-card-val" id="journal-stat-indicators" style="font-size: 0.8rem;">Bollinger Bands (200), Stoch (14,7,3)</span>
+                                </div>
+                                <div class="detail-card">
+                                    <span class="detail-card-label">Risk/Reward Profile</span>
+                                    <span class="detail-card-val" id="journal-stat-rr" style="font-size: 0.8rem;">1:2.5 (Gold 50% Bottom Conviction)</span>
+                                </div>
+                                <div class="detail-card">
+                                    <span class="detail-card-label">Key Level Focus</span>
+                                    <span class="detail-card-val" id="journal-stat-levels" style="font-size: 0.8rem;">Weekly Support/Resistance Sweeps</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Strategy Breakdown Card -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                            <!-- Pattern Explanation -->
+                            <section class="card" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                                <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-graduation-cap" style="color: var(--primary-color);"></i> Strategy & Execution Details</h3>
+                                <p id="journal-strategy-explanation" style="font-size: 0.8rem; line-height: 1.5; color: var(--text-secondary);"></p>
+                                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 0.75rem; border-radius: 8px;">
+                                    <h4 style="font-size: 0.8rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">Daily Management Checklist:</h4>
+                                    <ul id="journal-strategy-checklist" style="font-size: 0.75rem; color: var(--text-secondary); padding-left: 0.5rem; list-style: none; display: flex; flex-direction: column; gap: 0.25rem;">
+                                    </ul>
+                                </div>
+                            </section>
+
+                            <!-- Journal Log Table -->
+                            <section class="card" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                                <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-list" style="color: var(--color-success);"></i> Ledger Trade Log</h3>
+                                <div style="overflow-x: auto; max-height: 230px; overflow-y: auto;">
+                                    <table style="width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: left;">
+                                        <thead>
+                                            <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
+                                                <th style="padding: 0.5rem;">Asset</th>
+                                                <th style="padding: 0.5rem;">Position</th>
+                                                <th style="padding: 0.5rem;">Sizing</th>
+                                                <th style="padding: 0.5rem;">Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="journal-ledger-tbody" style="color: var(--text-secondary);">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
                 </div>
             </div>
 
