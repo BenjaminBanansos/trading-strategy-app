@@ -110,6 +110,9 @@
                 <button class="nav-tab" onclick="switchView('journal')" id="tab-journal">
                     <i class="fa-solid fa-book-bookmark"></i> AI Pattern Journal
                 </button>
+                <button class="nav-tab" onclick="switchView('buysell')" id="tab-buysell">
+                    <i class="fa-solid fa-circle-check"></i> BUY / SELL Check
+                </button>
                 <button class="nav-tab" onclick="switchView('course1')" id="tab-course1">
                     <i class="fa-solid fa-shield-halved"></i> Course 1: Grown-Up Rules
                 </button>
@@ -486,6 +489,157 @@
                                     <tbody id="master-ledger-tbody" style="color: var(--text-secondary);">
                                     </tbody>
                                 </table>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BUY / SELL Check View -->
+            <div id="buysell-view" style="display: none;">
+                <div class="academy-container" style="display: grid; grid-template-columns: 350px 1fr; gap: 1.5rem; min-height: 600px;">
+                    <!-- Left Column: Setup Inputs Form -->
+                    <aside class="academy-sidebar" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+                        <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin: 0; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);"><i class="fa-solid fa-calculator" style="color: var(--primary-color);"></i> Trade Parameter Inputs</h3>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.8rem;">
+                            <!-- Simulated Capital -->
+                            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                <label style="color: var(--text-secondary); font-weight: 600;">Simulated Account Capital (USD)</label>
+                                <input type="number" id="bs-capital" value="6000" style="background: #0d1117; color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 6px; font-size: 0.8rem; outline: none;" />
+                            </div>
+
+                            <!-- Target Asset -->
+                            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                <label style="color: var(--text-secondary); font-weight: 600;">Target Asset</label>
+                                <select id="bs-asset" style="background: #0d1117; color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 6px; font-size: 0.8rem; outline: none; cursor: pointer;">
+                                    <option value="Gold">Gold (XAUUSD)</option>
+                                    <option value="Bitcoin">Bitcoin (BTCUSD)</option>
+                                    <option value="NGAS.F">Natural Gas (NGAS.F)</option>
+                                    <option value="WTI">Crude Oil (WTI)</option>
+                                    <option value="MSTR">MicroStrategy (MSTR)</option>
+                                    <option value="COIN">Coinbase (COIN)</option>
+                                    <option value="GBPUSD">GBPUSD (Forex)</option>
+                                    <option value="USDZAR">USDZAR (Forex)</option>
+                                </select>
+                            </div>
+
+                            <!-- Position Type -->
+                            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                <label style="color: var(--text-secondary); font-weight: 600;">Position Type</label>
+                                <select id="bs-type" style="background: #0d1117; color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 6px; font-size: 0.8rem; outline: none; cursor: pointer;">
+                                    <option value="long">Long Entry</option>
+                                    <option value="short">Short Entry</option>
+                                    <option value="hedge">Hedge Protection</option>
+                                </select>
+                            </div>
+
+                            <!-- Entry Price -->
+                            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                <label style="color: var(--text-secondary); font-weight: 600;">Entry Price</label>
+                                <input type="number" step="any" id="bs-entry" value="2300" style="background: #0d1117; color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 6px; font-size: 0.8rem; outline: none;" />
+                            </div>
+
+                            <!-- Stop Loss -->
+                            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                <label style="color: var(--text-secondary); font-weight: 600;">Stop Loss / Invalidation Price</label>
+                                <input type="number" step="any" id="bs-stop" value="2250" style="background: #0d1117; color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 6px; font-size: 0.8rem; outline: none;" />
+                            </div>
+
+                            <!-- Sizing % -->
+                            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                <label style="color: var(--text-secondary); font-weight: 600;">Proposed Position Sizing (% of Capital)</label>
+                                <input type="number" id="bs-size" value="15" style="background: #0d1117; color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 6px; font-size: 0.8rem; outline: none;" />
+                            </div>
+
+                            <!-- Timeframe -->
+                            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                <label style="color: var(--text-secondary); font-weight: 600;">Timeframe Focus</label>
+                                <select id="bs-timeframe" style="background: #0d1117; color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 6px; font-size: 0.8rem; outline: none; cursor: pointer;">
+                                    <option value="4H">4-Hour Chart</option>
+                                    <option value="1D">Daily Chart</option>
+                                    <option value="1H">1-Hour Chart</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button onclick="validateBuySellSetup()" style="width: 100%; background: var(--primary-color); border: 1px solid var(--primary-color); color: #fff; padding: 0.75rem; border-radius: 8px; font-size: 0.8rem; cursor: pointer; font-weight: 700; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 0.5rem;">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> VALIDATE SETUP & BACKTEST
+                        </button>
+                    </aside>
+
+                    <!-- Right Column: Verification Results Panel -->
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
+                        <!-- Risk checklist verification card -->
+                        <section class="card" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+                                <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-list-check" style="color: var(--primary-color);"></i> ArcisFX Risk Checklist Audit</h3>
+                                <div id="bs-audit-status" style="font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 4px; background: rgba(255,255,255,0.03); color: var(--text-secondary);">Awaiting Parameters</div>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+                                <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); padding: 0.75rem; border-radius: 8px; display: flex; flex-direction: column; gap: 0.25rem;">
+                                    <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">Total Risk Amount (USD)</span>
+                                    <span id="bs-risk-usd" style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">$0.00</span>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); padding: 0.75rem; border-radius: 8px; display: flex; flex-direction: column; gap: 0.25rem;">
+                                    <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">Proposed Position Sizing</span>
+                                    <span id="bs-sizing-multiplier" style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">0.00x</span>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); padding: 0.75rem; border-radius: 8px; display: flex; flex-direction: column; gap: 0.25rem;">
+                                    <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">Reward-to-Risk Ratio</span>
+                                    <span id="bs-rr-ratio" style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">0.00:1</span>
+                                </div>
+                            </div>
+
+                            <ul id="bs-audit-list" style="font-size: 0.75rem; color: var(--text-secondary); margin: 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                                <li>Submit parameters to audit setup parameters against core 1.5% Risk Bounding Rules.</li>
+                            </ul>
+                        </section>
+
+                        <!-- Multi-timeframe strategy matching details -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                            <!-- Timeframe Analysis -->
+                            <section class="card" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                                <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 0.25rem;"><i class="fa-solid fa-timeline" style="color: var(--primary-color);"></i> Multi-Timeframe Alignment</h4>
+                                <div id="bs-timeframe-matching" style="font-size: 0.75rem; line-height: 1.4; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.5rem;">
+                                    Verify alignment across different charts (1H, 4H, Daily) with the long-term trend profile.
+                                </div>
+                            </section>
+
+                            <!-- Veteran & Top Trader Alignment Memory -->
+                            <section class="card" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                                <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 0.25rem;"><i class="fa-solid fa-brain" style="color: var(--primary-color);"></i> Trader Memory Matching</h4>
+                                <div id="bs-trader-memories" style="font-size: 0.75rem; line-height: 1.4; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.5rem;">
+                                    Cross-check setup guidelines with memories of veteran mentors (ArcisFX collars) and legendary market wizards.
+                                </div>
+                            </section>
+                        </div>
+
+                        <!-- Backtester Simulator Results -->
+                        <section class="card" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-database" style="color: var(--primary-color);"></i> Automatic Ledger Backtest & Campaign Simulator</h3>
+                                <span id="bs-backtest-asset" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">Asset: None Selected</span>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding: 0.75rem 0; margin: 0.25rem 0;">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600;">Ledger Historical Win Rate</div>
+                                    <div id="bs-backtest-winrate" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary);">0%</div>
+                                </div>
+                                <div style="text-align: center; border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color);">
+                                    <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600;">Expected Campaign Return</div>
+                                    <div id="bs-backtest-pnl" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary);">$0.00</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600;">Simulation Performance Score</div>
+                                    <div id="bs-backtest-score" style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary);">0 / 10</div>
+                                </div>
+                            </div>
+
+                            <div id="bs-backtest-details" style="font-size: 0.75rem; line-height: 1.4; color: var(--text-secondary);">
+                                Automatic backtester will calculate average campaign duration, sizing outcomes, and drawdowns from the historical ledger logs.
                             </div>
                         </section>
                     </div>
