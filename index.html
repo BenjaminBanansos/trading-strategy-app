@@ -512,7 +512,7 @@
                             <!-- Target Asset -->
                             <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                                 <label style="color: var(--text-secondary); font-weight: 600;">Target Asset</label>
-                                <select id="bs-asset" style="background: #0d1117; color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 6px; font-size: 0.8rem; outline: none; cursor: pointer;">
+                                <select id="bs-asset" onchange="updateEntryPriceWithLatest()" style="background: #0d1117; color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 6px; font-size: 0.8rem; outline: none; cursor: pointer;">
                                     <option value="Gold">Gold (XAUUSD)</option>
                                     <option value="Bitcoin">Bitcoin (BTCUSD)</option>
                                     <option value="NGAS.F">Natural Gas (NGAS.F)</option>
@@ -527,7 +527,7 @@
                             <!-- Position Type -->
                             <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                                 <label style="color: var(--text-secondary); font-weight: 600;">Position Type</label>
-                                <select id="bs-type" style="background: #0d1117; color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 6px; font-size: 0.8rem; outline: none; cursor: pointer;">
+                                <select id="bs-type" onchange="updateEntryPriceWithLatest()" style="background: #0d1117; color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 6px; font-size: 0.8rem; outline: none; cursor: pointer;">
                                     <option value="long">Long Entry</option>
                                     <option value="short">Short Entry</option>
                                     <option value="hedge">Hedge Protection</option>

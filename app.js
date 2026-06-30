@@ -932,6 +932,7 @@ function switchView(viewName) {
     } else if (viewName === "buysell") {
         if (buysell) buysell.style.display = "block";
         if (tabBuySell) tabBuySell.classList.add("active");
+        updateEntryPriceWithLatest();
     } else if (viewName === "course1") {
         course1.style.display = "block";
         document.getElementById("tab-course1").classList.add("active");
@@ -3515,4 +3516,56 @@ function drawSimulatedPositionChart(asset, type, entry, stop, target) {
 
     // Render using Plotly.js
     Plotly.newPlot(container, [priceTrace], layout, { responsive: true, displayModeBar: false });
+}
+
+function getLatestPriceForAsset(assetName) {
+    const keys = Object.keys(allHistory);
+    for (const key of keys) {
+        const day = allHistory[key];
+        for (const [catName, assets] of Object.entries(day.categories || {})) {
+            for (const a of assets) {
+                if (a.name.toLowerCase() === assetName.toLowerCase() || (assetName === "NGAS.F" && a.name.toLowerCase() === "natgas")) {
+                    const price = extractPriceFromPosition(a.position);
+                    if (price) {
+                        return price;
+                    }
+                }
+            }
+        }
+    }
+    // Fallback constants
+    if (assetName.toLowerCase().includes("gold")) return 4920;
+    if (assetName.toLowerCase().includes("bitcoin")) return 91200;
+    if (assetName.toLowerCase().includes("gas")) return 2.68;
+    if (assetName.toLowerCase().includes("oil") || assetName.toLowerCase().includes("wti")) return 68.87;
+    if (assetName.toLowerCase().includes("mstr")) return 299.00;
+    if (assetName.toLowerCase().includes("coin")) return 256.30;
+    if (assetName.toLowerCase().includes("gbp")) return 1.258;
+    if (assetName.toLowerCase().includes("zar")) return 16.52;
+    return 100;
+}
+
+function updateEntryPriceWithLatest() {
+    const assetSelect = document.getElementById("bs-asset");
+    const typeSelect = document.getElementById("bs-type");
+    const entryInput = document.getElementById("bs-entry");
+    const stopInput = document.getElementById("bs-stop");
+
+    if (!assetSelect || !typeSelect || !entryInput || !stopInput) return;
+
+    const asset = assetSelect.value;
+    const type = typeSelect.value;
+    const price = getLatestPriceForAsset(asset);
+
+    entryInput.value = price;
+
+    // Calculate a default logical stop loss price (e.g. 2% below for long/hedge, 2% above for short)
+    const isShort = type === "short";
+    const stopPercent = isShort ? 1.02 : 0.98;
+    const stopVal = price * stopPercent;
+    
+    stopInput.value = stopVal.toFixed(price < 10 ? 3 : 2);
+
+    // Re-run validation so the user sees the active audit and Plotly chart instantly!
+    validateBuySellSetup();
 }
